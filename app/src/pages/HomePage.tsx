@@ -141,7 +141,7 @@ export default function HomePage() {
                                     <a href="/terms" className="hover:text-emerald-400 transition-colors">Terms</a>
                                     <a href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy</a>
                                     <a href="/commerce" className="hover:text-emerald-400 transition-colors">Commerce Disclosure</a>
-                                    <a href="mailto:Nyxel.ai@proton.me" className="hover:text-emerald-400 transition-colors">Contact</a>
+                                    <a href="/contact" className="hover:text-emerald-400 transition-colors">Contact</a>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between text-gray-600 text-xs">
