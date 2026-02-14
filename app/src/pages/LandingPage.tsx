@@ -65,12 +65,12 @@ export default function LandingPage() {
 
                     <div className="flex items-center gap-4">
                         <Link to="/home" className="hidden sm:block text-sm text-gray-300 hover:text-white transition-colors">Sign In</Link>
-                        <button
-                            onClick={() => scrollToSection('pricing')}
+                        <Link
+                            to="/home"
                             className="bg-yellow-400 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-yellow-300 transition-colors"
                         >
                             Get Started
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </nav>
@@ -98,12 +98,12 @@ export default function LandingPage() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button
-                            onClick={() => scrollToSection('pricing')}
+                        <Link
+                            to="/home"
                             className="bg-yellow-400 text-black px-8 py-4 rounded-full text-base font-semibold hover:bg-yellow-300 transition-all transform hover:scale-105"
                         >
                             Get Started
-                        </button>
+                        </Link>
                         <button
                             onClick={() => scrollToSection('pricing')}
                             className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-full text-base font-semibold hover:bg-white/20 transition-all"
@@ -270,9 +270,9 @@ export default function LandingPage() {
                                     Email support
                                 </li>
                             </ul>
-                            <button className="w-full py-3 rounded-full border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
+                            <Link to="/home" className="block text-center w-full py-3 rounded-full border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
                                 Get Started
-                            </button>
+                            </Link>
                         </div>
 
                         {/* Pro Plan */}
@@ -365,12 +365,12 @@ export default function LandingPage() {
                         <p className="text-gray-300 text-lg mb-8 max-w-xl mx-auto">
                             Join thousands of creators using Nyxel to bring their ideas to life.
                         </p>
-                        <button
-                            onClick={() => scrollToSection('pricing')}
-                            className="bg-white/10 backdrop-blur-sm text-white border border-white/50 px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/20 transition-all"
+                        <Link
+                            to="/home"
+                            className="inline-block bg-white/10 backdrop-blur-sm text-white border border-white/50 px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/20 transition-all"
                         >
                             Start Free Now
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </section>
