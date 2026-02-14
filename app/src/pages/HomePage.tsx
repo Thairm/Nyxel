@@ -127,22 +127,27 @@ export default function HomePage() {
 
                     {/* Footer */}
                     <footer className="mt-12 pt-8 border-t border-white/5">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <img
-                                    src="/new logo.png"
-                                    alt="Nyxel Logo"
-                                    className="w-5 h-5 object-contain"
-                                />
-                                <span className="text-white font-semibold">Nyxel</span>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <img
+                                        src="/new logo.png"
+                                        alt="Nyxel Logo"
+                                        className="w-5 h-5 object-contain"
+                                    />
+                                    <span className="text-white font-semibold">Nyxel</span>
+                                </div>
+                                <div className="flex gap-6 text-gray-500 text-sm">
+                                    <a href="/terms" className="hover:text-emerald-400 transition-colors">Terms</a>
+                                    <a href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy</a>
+                                    <a href="/commerce" className="hover:text-emerald-400 transition-colors">Commerce Disclosure</a>
+                                    <a href="mailto:Nyxel.ai@proton.me" className="hover:text-emerald-400 transition-colors">Contact</a>
+                                </div>
                             </div>
-                            <div className="flex gap-6 text-gray-500 text-sm">
-                                <a href="#" className="hover:text-emerald-400 transition-colors">About</a>
-                                <a href="#" className="hover:text-emerald-400 transition-colors">Privacy</a>
-                                <a href="#" className="hover:text-emerald-400 transition-colors">Terms</a>
-                                <a href="#" className="hover:text-emerald-400 transition-colors">Contact</a>
+                            <div className="flex items-center justify-between text-gray-600 text-xs">
+                                <p>Customer Support: <a href="mailto:Nyxel.ai@proton.me" className="text-gray-500 hover:text-emerald-400 transition-colors">Nyxel.ai@proton.me</a></p>
+                                <p>© 2026 Nyxel. All rights reserved.</p>
                             </div>
-                            <p className="text-gray-600 text-sm">© 2026 Nyxel. All rights reserved.</p>
                         </div>
                     </footer>
                 </div>
