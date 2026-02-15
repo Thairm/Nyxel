@@ -16,7 +16,7 @@ export default function CommercePage() {
                 <div className="space-y-1">
                     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border border-white/10 rounded-lg overflow-hidden">
                         <Row label="Business Name" labelJa="販売業者名" value="Nyxel" />
-                        <Row label="Representative" labelJa="運営統括責任者" value="Will be disclosed upon request / ご請求に応じて遅滞なく開示いたします" />
+                        <Row label="Representative" labelJa="運営統括責任者" value="Eiji Uemura / 上村 英士" />
                         <Row label="Address" labelJa="所在地" value="Will be disclosed upon request / ご請求に応じて遅滞なく開示いたします" />
                         <Row label="Phone Number" labelJa="電話番号" value="Will be disclosed upon request / ご請求に応じて遅滞なく開示いたします" />
                         <Row label="Email" labelJa="メールアドレス" value="Nyxel.ai@proton.me" isEmail />
