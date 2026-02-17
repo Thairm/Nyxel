@@ -59,7 +59,7 @@ export default function LandingPage() {
                     <div className="hidden md:flex items-center gap-8">
                         <button onClick={() => scrollToSection('features')} className="text-sm text-gray-300 hover:text-white transition-colors">Features</button>
                         <button onClick={() => scrollToSection('how-it-works')} className="text-sm text-gray-300 hover:text-white transition-colors">How It Works</button>
-                        <button onClick={() => scrollToSection('pricing')} className="text-sm text-gray-300 hover:text-white transition-colors">Pricing</button>
+                        <Link to="/pricing" className="text-sm text-gray-300 hover:text-white transition-colors">Pricing</Link>
                         <button onClick={() => scrollToSection('faq')} className="text-sm text-gray-300 hover:text-white transition-colors">FAQ</button>
                     </div>
 
@@ -104,12 +104,12 @@ export default function LandingPage() {
                         >
                             Get Started
                         </Link>
-                        <button
-                            onClick={() => scrollToSection('pricing')}
+                        <Link
+                            to="/pricing"
                             className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-8 py-4 rounded-full text-base font-semibold hover:bg-white/20 transition-all"
                         >
                             View Pricing
-                        </button>
+                        </Link>
                     </div>
                 </div>
 

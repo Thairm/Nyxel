@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import GeneratePage from './pages/GeneratePage';
 import DocumentationPage from './pages/DocumentationPage';
+import PricingPage from './pages/PricingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CommercePage from './pages/CommercePage';
@@ -17,6 +18,7 @@ function App() {
         <Route path="/generate/:mode" element={<GeneratePage />} />
         <Route path="/generate" element={<Navigate to="/generate/image" replace />} />
         <Route path="/docs" element={<DocumentationPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/commerce" element={<CommercePage />} />
