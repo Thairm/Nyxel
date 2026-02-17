@@ -290,8 +290,8 @@ export default function PricingPage() {
                 </div>
 
                 {/* Promo Code Card — positioned on the right */}
-                <div className="hidden lg:block absolute top-16 right-6 xl:right-[calc((100%-1280px)/2)]">
-                    <div className="w-72 rounded-2xl bg-white/[0.03] border border-white/10 p-5 backdrop-blur-sm">
+                <div className="hidden lg:block absolute top-16 right-4 xl:right-8 2xl:right-[calc((100%-1280px)/2)]">
+                    <div className="w-64 rounded-2xl bg-white/[0.03] border border-white/10 p-5 backdrop-blur-sm">
                         <div className="flex items-center gap-2 mb-3">
                             <Gift className="w-5 h-5 text-yellow-400" />
                             <h3 className="text-sm font-semibold">Have a promo code?</h3>
