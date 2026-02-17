@@ -4,6 +4,8 @@ import HomePage from './pages/HomePage';
 import GeneratePage from './pages/GeneratePage';
 import DocumentationPage from './pages/DocumentationPage';
 import PricingPage from './pages/PricingPage';
+import AuthPage from './pages/AuthPage';
+import SuccessPage from './pages/SuccessPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CommercePage from './pages/CommercePage';
@@ -19,6 +21,8 @@ function App() {
         <Route path="/generate" element={<Navigate to="/generate/image" replace />} />
         <Route path="/docs" element={<DocumentationPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/success" element={<SuccessPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/commerce" element={<CommercePage />} />
