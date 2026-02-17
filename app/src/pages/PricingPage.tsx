@@ -45,8 +45,8 @@ const tiers: PricingTier[] = [
             'Priority support',
         ],
         links: {
-            default: '#',  // PASTE: Starter default link
-            promo: '#',    // PASTE: Starter promo link (50% off prefilled)
+            default: 'https://buy.stripe.com/9B69AT1Dx1C0gD3eGE7g404',
+            promo: 'https://buy.stripe.com/5kQaEXfunbcA9aBgOM7g405?prefilled_promo_code=STARTER50cwgdfmvmvtiwerfx',
         },
     },
     {
@@ -68,8 +68,8 @@ const tiers: PricingTier[] = [
             'Crystal fast-pass queue',
         ],
         links: {
-            default: '#',  // PASTE: Standard default link
-            promo: '#',    // PASTE: Standard promo link (50% off prefilled)
+            default: 'https://buy.stripe.com/00wcN5fun2G42Mdbus7g406',
+            promo: 'https://buy.stripe.com/dRm6oHbe75SgaeF4207g407?prefilled_promo_code=STANDARD50caefmcprgasmcakl',
         },
     },
     {
@@ -90,8 +90,8 @@ const tiers: PricingTier[] = [
             'Free community generation',
         ],
         links: {
-            default: '#',  // PASTE: Pro default link
-            promo: '#',    // PASTE: Pro promo link (50% off prefilled)
+            default: 'https://buy.stripe.com/eVq9AT81V80oeuVaqo7g408',
+            promo: 'https://buy.stripe.com/cNieVd3LF2G4aeF5647g409?prefilled_promo_code=PRO50mcpaefakqwerflff',
         },
     },
     {
@@ -111,8 +111,8 @@ const tiers: PricingTier[] = [
             'Free community generation',
         ],
         links: {
-            default: '#',  // PASTE: Ultra default link
-            promo: '#',    // PASTE: Ultra promo link (50% off prefilled)
+            default: 'https://buy.stripe.com/dRm3cv3LF3K886xcyw7g40a',
+            promo: 'https://buy.stripe.com/00w7sL0ztcgE5Yp7ec7g40b?prefilled_promo_code=ULTRA50ratglamfesgfqwer',
         },
     },
 ];
