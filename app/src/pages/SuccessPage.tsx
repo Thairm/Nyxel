@@ -9,7 +9,9 @@ export default function SuccessPage() {
     const { user } = useAuth();
     const [recorded, setRecorded] = useState(false);
     const tier = searchParams.get('tier');
-    const usedPromo = searchParams.get('promo') === 'true';
+    const promoParam = searchParams.get('promo'); // 'true', 'social', or null
+    const usedPromo = promoParam === 'true' || promoParam === 'social';
+    const promoSource = promoParam === 'social' ? 'social_media' : promoParam === 'true' ? 'website' : null;
 
     useEffect(() => {
         // Record subscription + promo usage in Supabase
@@ -35,6 +37,7 @@ export default function SuccessPage() {
                         .insert({
                             user_id: user.id,
                             tier: tier,
+                            source: promoSource, // 'website' or 'social_media'
                         });
                 }
 
@@ -42,7 +45,7 @@ export default function SuccessPage() {
             };
             recordSubscription();
         }
-    }, [user, tier, usedPromo, recorded]);
+    }, [user, tier, usedPromo, promoSource, recorded]);
 
     return (
         <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center px-6">
