@@ -125,7 +125,7 @@ const modelCosts = [
 
 export default function PricingPage() {
     const { user, loading: authLoading, signOut } = useAuth();
-    const { promoUsed, currentTier, loading: promoLoading, recordPromoUse } = usePromoStatus();
+    const { promoUsed, currentTier, loading: promoLoading } = usePromoStatus();
 
     const isLoading = authLoading || promoLoading;
 
@@ -149,18 +149,16 @@ export default function PricingPage() {
     };
 
     // Handle subscribe click
-    const handleSubscribeClick = async (tier: PricingTier) => {
+    const handleSubscribeClick = (tier: PricingTier) => {
         if (!user) {
-            // Redirect to auth first
             window.location.href = '/auth';
             return;
         }
-        // Record promo usage if using promo link
-        if (isPromoAvailable(tier)) {
-            await recordPromoUse(tier.id);
-        }
-        // Redirect to payment link
-        window.location.href = getLinkForTier(tier);
+        // Build the payment link URL with promo flag for the success page
+        const link = getLinkForTier(tier);
+        // No recording here — promo usage is recorded on the SUCCESS page
+        // after the user actually completes payment
+        window.location.href = link;
     };
 
     const visibleTiers = tiers.filter(shouldShowTier);

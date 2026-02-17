@@ -9,9 +9,10 @@ export default function SuccessPage() {
     const { user } = useAuth();
     const [recorded, setRecorded] = useState(false);
     const tier = searchParams.get('tier');
+    const usedPromo = searchParams.get('promo') === 'true';
 
     useEffect(() => {
-        // Record subscription in Supabase
+        // Record subscription + promo usage in Supabase
         if (user && tier && !recorded) {
             const recordSubscription = async () => {
                 // Upsert subscription status
@@ -26,11 +27,22 @@ export default function SuccessPage() {
                         },
                         { onConflict: 'user_id' }
                     );
+
+                // Record promo usage ONLY if they actually used a promo code
+                if (usedPromo) {
+                    await supabase
+                        .from('promo_usage')
+                        .insert({
+                            user_id: user.id,
+                            tier: tier,
+                        });
+                }
+
                 setRecorded(true);
             };
             recordSubscription();
         }
-    }, [user, tier, recorded]);
+    }, [user, tier, usedPromo, recorded]);
 
     return (
         <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center px-6">
