@@ -1,7 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Sparkles, Gem, Diamond, Zap, Crown, ArrowLeft, Info, LogIn, LogOut, Tag } from 'lucide-react';
+import { Check, Sparkles, Gem, Diamond, Zap, Crown, ArrowLeft, Info, LogIn, LogOut, Tag, Gift } from 'lucide-react';
 import { useAuth, usePromoStatus } from '../hooks/useAuth';
 import { TIER_ORDER } from '../lib/supabase';
+
+// Social media promo codes → payment link mapping
+// Add new codes here as needed
+const SOCIAL_PROMO_CODES: Record<string, string> = {
+    'STANDARD100': 'https://buy.stripe.com/14A14nfuna8w3QhdCA7g40c?prefilled_promo_code=STANDARD100qpwrpesmcvpogsak',
+    // Add more social promo codes here, e.g.:
+    // 'YOUTUBE100': 'https://buy.stripe.com/...',
+    // 'TWITTER100': 'https://buy.stripe.com/...',
+};
 
 interface TierLinks {
     default: string;
@@ -126,8 +136,28 @@ const modelCosts = [
 export default function PricingPage() {
     const { user, loading: authLoading, signOut } = useAuth();
     const { promoUsed, currentTier, loading: promoLoading } = usePromoStatus();
+    const [promoCode, setPromoCode] = useState('');
+    const [promoError, setPromoError] = useState('');
 
     const isLoading = authLoading || promoLoading;
+
+    // Handle social promo code submission
+    const handlePromoSubmit = () => {
+        const code = promoCode.trim().toUpperCase();
+        const link = SOCIAL_PROMO_CODES[code];
+        if (link) {
+            if (!user) {
+                // Save code to localStorage so we can redirect after login
+                localStorage.setItem('pendingPromoCode', code);
+                window.location.href = '/auth';
+                return;
+            }
+            setPromoError('');
+            window.location.href = link;
+        } else {
+            setPromoError('Invalid promo code. Please check and try again.');
+        }
+    };
 
     // Determine which link to use for a tier
     const getLinkForTier = (tier: PricingTier) => {
@@ -217,7 +247,7 @@ export default function PricingPage() {
             </div>
 
             {/* Hero */}
-            <section className="pt-16 pb-8 px-6">
+            <section className="pt-16 pb-8 px-6 relative">
                 <div className="max-w-4xl mx-auto text-center">
                     <h1
                         className="text-4xl sm:text-5xl md:text-6xl font-medium mb-4 tracking-tight"
@@ -258,7 +288,67 @@ export default function PricingPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Promo Code Card — positioned on the right */}
+                <div className="hidden lg:block absolute top-16 right-6 xl:right-[calc((100%-1280px)/2)]">
+                    <div className="w-72 rounded-2xl bg-white/[0.03] border border-white/10 p-5 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Gift className="w-5 h-5 text-yellow-400" />
+                            <h3 className="text-sm font-semibold">Have a promo code?</h3>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-3">
+                            Enter your code to unlock exclusive offers
+                        </p>
+                        <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                            onKeyDown={(e) => e.key === 'Enter' && handlePromoSubmit()}
+                            placeholder="Enter promo code"
+                            className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400/50 transition-colors mb-3"
+                        />
+                        <button
+                            onClick={handlePromoSubmit}
+                            className="w-full bg-yellow-400 text-black py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-300 transition-colors cursor-pointer"
+                        >
+                            Subscribe
+                        </button>
+                        {promoError && (
+                            <p className="text-red-400 text-xs mt-2 text-center">{promoError}</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Mobile Promo Code (shown below hero on smaller screens) */}
+                <div className="lg:hidden mt-8 max-w-sm mx-auto">
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-5 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Gift className="w-5 h-5 text-yellow-400" />
+                            <h3 className="text-sm font-semibold">Have a promo code?</h3>
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={promoCode}
+                                onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePromoSubmit()}
+                                placeholder="Enter promo code"
+                                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400/50 transition-colors"
+                            />
+                            <button
+                                onClick={handlePromoSubmit}
+                                className="bg-yellow-400 text-black px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-300 transition-colors cursor-pointer"
+                            >
+                                Subscribe
+                            </button>
+                        </div>
+                        {promoError && (
+                            <p className="text-red-400 text-xs mt-2 text-center">{promoError}</p>
+                        )}
+                    </div>
+                </div>
             </section>
+
 
             {/* Free Tier + Paid Tiers */}
             <section className="py-12 px-6">
