@@ -5,6 +5,7 @@ import GeneratePage from './pages/GeneratePage';
 import DocumentationPage from './pages/DocumentationPage';
 import PricingPage from './pages/PricingPage';
 import AuthPage from './pages/AuthPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import SuccessPage from './pages/SuccessPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
@@ -22,6 +23,7 @@ function App() {
         <Route path="/docs" element={<DocumentationPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

@@ -19,9 +19,12 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
+import { useAuth, getUserDisplayInfo } from '@/hooks/useAuth';
 
 export default function LandingPage() {
     const [scrolled, setScrolled] = useState(false);
+    const { user } = useAuth();
+    const { displayName, avatarUrl, initial } = getUserDisplayInfo(user);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -64,13 +67,35 @@ export default function LandingPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Link to="/home" className="hidden sm:block text-sm text-gray-300 hover:text-white transition-colors">Sign In</Link>
-                        <Link
-                            to="/home"
-                            className="bg-yellow-400 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-yellow-300 transition-colors"
-                        >
-                            Get Started
-                        </Link>
+                        {user ? (
+                            <>
+                                <Link
+                                    to="/home"
+                                    className="bg-yellow-400 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-yellow-300 transition-colors flex items-center gap-2"
+                                >
+                                    Go to Hub
+                                </Link>
+                                <Link to="/home" className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-black text-sm font-bold">
+                                            {initial}
+                                        </div>
+                                    )}
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link to="/auth" className="hidden sm:block text-sm text-gray-300 hover:text-white transition-colors">Sign In</Link>
+                                <Link
+                                    to="/auth"
+                                    className="bg-yellow-400 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-yellow-300 transition-colors"
+                                >
+                                    Get Started
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </nav>

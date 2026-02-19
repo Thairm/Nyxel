@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
   Box,
@@ -10,9 +10,13 @@ import {
   GraduationCap,
   Users,
   FileText,
-  MoreHorizontal
+  MoreHorizontal,
+  ShoppingCart,
+  LogIn,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth, getUserDisplayInfo } from '@/hooks/useAuth';
+import { usePromoStatus } from '@/hooks/useAuth';
 
 // Navigation items
 const navItems = [
@@ -32,11 +36,22 @@ const secondaryNav = [
   { icon: FileText, label: 'Documentation', path: '/docs' },
 ];
 
-// Need to import ShoppingCart separately as it was missing in the list above but used in secondaryNav
-import { ShoppingCart } from 'lucide-react';
+// Map tier IDs to display names
+const tierDisplayNames: Record<string, string> = {
+  starter: 'Starter Plan',
+  standard: 'Standard Plan',
+  pro: 'Pro Plan',
+  ultra: 'Ultra Plan',
+};
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { currentTier } = usePromoStatus();
+  const { displayName, avatarUrl, initial } = getUserDisplayInfo(user);
+
+  const planLabel = currentTier ? tierDisplayNames[currentTier] || 'Paid Plan' : 'Free Plan';
 
   return (
     <aside className="fixed left-0 top-0 w-60 h-full bg-[#0D0F0E] border-r border-white/5 z-50 flex flex-col">
@@ -107,19 +122,45 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-white/5">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
-            U
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-white font-medium">User</p>
-            <p className="text-xs text-gray-500">Free Plan</p>
-          </div>
-        </div>
+        {user ? (
+          <>
+            <div
+              className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-white/5 rounded-lg p-1.5 -m-1.5 transition-colors"
+              onClick={() => navigate('/profile')}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
+                    {initial}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white font-medium truncate">{displayName}</p>
+                <p className="text-xs text-gray-500">{planLabel}</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <button
+            onClick={() => navigate('/auth')}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors mb-3"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Sign In</span>
+          </button>
+        )}
         <div className="flex gap-2 text-gray-500">
-          <a href="#" className="text-xs hover:text-emerald-400 transition-colors">Privacy</a>
+          <Link to="/privacy" className="text-xs hover:text-emerald-400 transition-colors">Privacy</Link>
           <span className="text-xs">·</span>
-          <a href="#" className="text-xs hover:text-emerald-400 transition-colors">Terms</a>
+          <Link to="/terms" className="text-xs hover:text-emerald-400 transition-colors">Terms</Link>
         </div>
       </div>
     </aside>
