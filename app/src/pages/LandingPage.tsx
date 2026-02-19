@@ -232,119 +232,252 @@ export default function LandingPage() {
             {/* Pricing Section */}
             <section id="pricing" className="py-24 px-6 bg-black">
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
+                    <div className="text-center mb-12">
                         <h2
                             className="text-4xl sm:text-5xl md:text-6xl font-medium mb-4"
                             style={{ fontFamily: "'Playfair Display', serif" }}
                         >
                             Simple Pricing
                         </h2>
-                        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                        <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-6">
                             Choose the plan that fits your creative needs
                         </p>
+                        <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-5 py-2">
+                            <span className="text-sm text-emerald-400 font-semibold">🎉 Launch Special: 50% off your first month on all plans!</span>
+                        </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        {/* Free Plan */}
-                        <div className="p-8 rounded-2xl bg-white/5 border border-white/10">
-                            <h3 className="text-xl font-semibold mb-2">Free</h3>
-                            <div className="mb-6">
-                                <span className="text-4xl font-bold">$0</span>
-                                <span className="text-gray-400">/month</span>
+                    {/* Free Tier Banner */}
+                    <div className="mb-8 p-6 rounded-2xl bg-white/[0.03] border border-white/10 max-w-6xl mx-auto">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Sparkles className="w-5 h-5 text-gray-400" />
+                                    <h3 className="text-lg font-semibold">Free Tier</h3>
+                                </div>
+                                <p className="text-sm text-gray-400">
+                                    100 Gems + 50 Crystals per month. Create an account to start.
+                                </p>
                             </div>
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    10 generations per month
+                            <Link
+                                to="/home"
+                                className="bg-white/10 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-white/20 border border-white/20 transition-colors"
+                            >
+                                Create Free Account
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* Paid Tiers */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+                        {/* Starter */}
+                        <div className="relative flex flex-col rounded-2xl p-6 bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center mb-4 text-gray-300">
+                                <Sparkles className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-1">Starter</h3>
+                            <div className="mb-1">
+                                <span className="text-lg text-gray-500 line-through mr-2">$4.99</span>
+                                <span className="text-3xl font-bold text-emerald-400">$2.49</span>
+                                <span className="text-gray-500 text-sm ml-1">/ month</span>
+                            </div>
+                            <div className="text-xs text-emerald-400 mb-4">50% off first month!</div>
+                            <div className="flex flex-col gap-2 mb-5 pb-5 border-b border-white/10">
+                                <div className="flex items-center justify-between bg-yellow-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Gems</span>
+                                    <span className="text-sm font-semibold text-yellow-400">1,500</span>
+                                </div>
+                                <div className="flex items-center justify-between bg-purple-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Crystals</span>
+                                    <span className="text-sm font-semibold text-purple-400">500</span>
+                                </div>
+                            </div>
+                            <ul className="space-y-2.5 mb-6 flex-1">
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Everything in Free
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Standard quality
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    1,500 Gems / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Basic AI models
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    500 Crystals / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Email support
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Crystal fast-pass queue
+                                </li>
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Priority support
                                 </li>
                             </ul>
-                            <Link to="/home" className="block text-center w-full py-3 rounded-full border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
-                                Get Started
+                            <Link to="/pricing" className="block text-center w-full py-3 rounded-full bg-white/10 text-white text-sm font-semibold hover:bg-white/20 border border-white/20 transition-all">
+                                Sign Up & Subscribe
                             </Link>
                         </div>
 
-                        {/* Pro Plan */}
-                        <div className="p-8 rounded-2xl bg-gradient-to-b from-yellow-400/20 to-yellow-400/5 border-2 border-yellow-400 relative">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-semibold">
+                        {/* Standard - Most Popular */}
+                        <div className="relative flex flex-col rounded-2xl p-6 bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 border-2 border-yellow-400/40 shadow-[0_0_40px_-8px_rgba(250,204,21,0.2)] transition-all duration-300 hover:scale-[1.02]">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-400 text-black">
                                 Most Popular
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">Pro</h3>
-                            <div className="mb-6">
-                                <span className="text-4xl font-bold">$9.99</span>
-                                <span className="text-gray-400">/month</span>
+                            <div className="w-11 h-11 rounded-xl bg-yellow-400 flex items-center justify-center mb-4 text-black">
+                                <Sparkles className="w-6 h-6" />
                             </div>
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    More credits for advanced models
+                            <h3 className="text-lg font-semibold mb-1">Standard</h3>
+                            <div className="mb-1">
+                                <span className="text-lg text-gray-500 line-through mr-2">$9.99</span>
+                                <span className="text-3xl font-bold text-emerald-400">$4.99</span>
+                                <span className="text-gray-500 text-sm ml-1">/ month</span>
+                            </div>
+                            <div className="text-xs text-emerald-400 mb-4">50% off first month!</div>
+                            <div className="flex flex-col gap-2 mb-5 pb-5 border-b border-white/10">
+                                <div className="flex items-center justify-between bg-yellow-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Gems</span>
+                                    <span className="text-sm font-semibold text-yellow-400">3,000</span>
+                                </div>
+                                <div className="flex items-center justify-between bg-purple-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Crystals</span>
+                                    <span className="text-sm font-semibold text-purple-400">1,000</span>
+                                </div>
+                            </div>
+                            <ul className="space-y-2.5 mb-6 flex-1">
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-400" />
+                                    Everything in Starter
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Unlimited generations for some models
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-400" />
+                                    3,000 Gems / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    High quality output
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-400" />
+                                    1,000 Crystals / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Priority processing
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-400" />
+                                    Free community generation
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Priority email support
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-yellow-400" />
+                                    Crystal fast-pass queue
                                 </li>
                             </ul>
-                            <button className="w-full py-3 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition-colors">
-                                Subscribe Now
-                            </button>
+                            <Link to="/pricing" className="block text-center w-full py-3 rounded-full bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-300 transition-all">
+                                Sign Up & Subscribe
+                            </Link>
                         </div>
 
-                        {/* Business Plan */}
-                        <div className="p-8 rounded-2xl bg-white/5 border border-white/10">
-                            <h3 className="text-xl font-semibold mb-2">Business</h3>
-                            <div className="mb-6">
-                                <span className="text-4xl font-bold">$19.99</span>
-                                <span className="text-gray-400">/month</span>
+                        {/* Pro - Best Value */}
+                        <div className="relative flex flex-col rounded-2xl p-6 bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-yellow-400 border border-yellow-400/30">
+                                Best Value
                             </div>
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Everything from Pro plan
+                            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center mb-4 text-gray-300">
+                                <Zap className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-1">Pro</h3>
+                            <div className="mb-1">
+                                <span className="text-lg text-gray-500 line-through mr-2">$19.99</span>
+                                <span className="text-3xl font-bold text-emerald-400">$9.99</span>
+                                <span className="text-gray-500 text-sm ml-1">/ month</span>
+                            </div>
+                            <div className="text-xs text-emerald-400 mb-4">50% off first month!</div>
+                            <div className="flex flex-col gap-2 mb-5 pb-5 border-b border-white/10">
+                                <div className="flex items-center justify-between bg-yellow-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Gems</span>
+                                    <span className="text-sm font-semibold text-yellow-400">7,000</span>
+                                </div>
+                                <div className="flex items-center justify-between bg-purple-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Crystals</span>
+                                    <span className="text-sm font-semibold text-purple-400">2,000</span>
+                                </div>
+                            </div>
+                            <ul className="space-y-2.5 mb-6 flex-1">
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Everything in Standard
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Additional credits
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    7,000 Gems / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Premium AI models
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    2,000 Crystals / month
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Commercial license
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    More Gems per dollar
                                 </li>
-                                <li className="flex items-center gap-3 text-gray-300">
-                                    <Check className="w-5 h-5 text-yellow-400" />
-                                    Dedicated support
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Free community generation
                                 </li>
                             </ul>
-                            <button className="w-full py-3 rounded-full border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
-                                Contact Sales
-                            </button>
+                            <Link to="/pricing" className="block text-center w-full py-3 rounded-full bg-white/10 text-white text-sm font-semibold hover:bg-white/20 border border-white/20 transition-all">
+                                Sign Up & Subscribe
+                            </Link>
                         </div>
+
+                        {/* Ultra */}
+                        <div className="relative flex flex-col rounded-2xl p-6 bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
+                            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center mb-4 text-gray-300">
+                                <Sparkles className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-1">Ultra</h3>
+                            <div className="mb-1">
+                                <span className="text-lg text-gray-500 line-through mr-2">$29.99</span>
+                                <span className="text-3xl font-bold text-emerald-400">$14.99</span>
+                                <span className="text-gray-500 text-sm ml-1">/ month</span>
+                            </div>
+                            <div className="text-xs text-emerald-400 mb-4">50% off first month!</div>
+                            <div className="flex flex-col gap-2 mb-5 pb-5 border-b border-white/10">
+                                <div className="flex items-center justify-between bg-yellow-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Gems</span>
+                                    <span className="text-sm font-semibold text-yellow-400">11,000</span>
+                                </div>
+                                <div className="flex items-center justify-between bg-purple-400/5 rounded-lg px-3 py-2">
+                                    <span className="text-xs text-gray-400">Crystals</span>
+                                    <span className="text-sm font-semibold text-purple-400">3,000</span>
+                                </div>
+                            </div>
+                            <ul className="space-y-2.5 mb-6 flex-1">
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Everything in Pro
+                                </li>
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    11,000 Gems / month
+                                </li>
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    3,000 Crystals / month
+                                </li>
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Best Gems per dollar
+                                </li>
+                                <li className="flex items-start gap-2 text-sm text-gray-300">
+                                    <Check className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-400" />
+                                    Free community generation
+                                </li>
+                            </ul>
+                            <Link to="/pricing" className="block text-center w-full py-3 rounded-full bg-white/10 text-white text-sm font-semibold hover:bg-white/20 border border-white/20 transition-all">
+                                Sign Up & Subscribe
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* View Full Pricing Link */}
+                    <div className="text-center mt-8">
+                        <Link to="/pricing" className="text-sm text-gray-400 hover:text-yellow-400 transition-colors underline underline-offset-4">
+                            View full pricing details →
+                        </Link>
                     </div>
                 </div>
             </section>
@@ -411,7 +544,7 @@ export default function LandingPage() {
                                 Is there customer support?
                             </AccordionTrigger>
                             <AccordionContent className="text-gray-400 pb-5">
-                                Yes, we provide email support for all users at Nyxel.ai@proton.me. Free plan users receive standard support, while Pro and Business plan subscribers receive priority support with faster response times.
+                                Yes, we provide email support for all users at Nyxel.ai@proton.me. Free plan users receive standard support, while paid plan subscribers receive priority support with faster response times.
                             </AccordionContent>
                         </AccordionItem>
 
