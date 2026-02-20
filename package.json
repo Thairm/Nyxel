@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "civitai": "^0.1.15"
+  }
+}

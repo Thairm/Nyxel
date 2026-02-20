@@ -44,23 +44,41 @@ export async function onRequestPost(context: any) {
 
             // CivitAI URN based on model_integration_plan
             // WAINSFWIllustrious id is 827184, version 1183765
-            // Z Image Pro id is 2186208, version 2461607
+            // Z Image Base id is 2342797, version 2635223
+            let civitaiModel = modelId === 6
+                ? "urn:air:sdxl:checkpoint:civitai:2342797@2635223" // Z Image Base
+                : "urn:air:sdxl:checkpoint:civitai:827184@2514310"; // WAINSFWIllustrious
 
-            let baseModel = modelId === 6
-                ? "urn:air:sdxl:checkpoint:civitai:2186208@2461607" // Z Image Pro
-                : "urn:air:sdxl:checkpoint:civitai:827184@1183765"; // WAINSFWIllustrious
+            // Map frontend selectedRatio (e.g., '1:1', '2:3') to SDXL resolutions
+            let width = 832;
+            let height = 1216;
+            if (params.ratio === '1:1') { width = 1024; height = 1024; }
+            else if (params.ratio === '3:2') { width = 1216; height = 832; }
+            else if (params.ratio === '9:16') { width = 768; height = 1344; }
+            else if (params.ratio === '16:9') { width = 1344; height = 768; }
 
-            const response = await fetch("https://civitai.com/api/v1/images", {
+            const civitaiPayload = {
+                $type: "textToImage",
+                model: civitaiModel,
+                params: {
+                    prompt: prompt,
+                    negativePrompt: params.negativePrompt || "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3)",
+                    scheduler: "EulerA", // Corresponds to Scheduler.EULER_A
+                    steps: 25,
+                    cfgScale: 7,
+                    width: width,
+                    height: height,
+                    clipSkip: 2
+                }
+            };
+
+            const response = await fetch("https://civitai.com/api/v1/consumer/jobs", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${apiKey}`
                 },
-                body: JSON.stringify({
-                    baseModel,
-                    prompt,
-                    ...params
-                })
+                body: JSON.stringify(civitaiPayload)
             });
 
             const data = await response.json();
