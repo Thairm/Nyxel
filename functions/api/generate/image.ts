@@ -43,12 +43,13 @@ export async function onRequestPost(context: any) {
             if (!apiKey) throw new Error("Missing CIVITAI_API_TOKEN");
 
             // CivitAI URN based on model_integration_plan
-            // Z Image: urn:air:sdxl:checkpoint:civitai:xxxx@yyyy
-            // WAINSFWIllustrious: urn:air:sdxl:checkpoint:civitai:xxxx@yyyy
+            // WAINSFWIllustrious id is 827184, version 1183765
+            // Z Image Pro id is 2186208, version 2461607
 
-            let baseModel = modelId === 6 ? "urn:air:sdxl:checkpoint:civitai:xxxx@yyyy" : "urn:air:sdxl:checkpoint:civitai:zzzz@wwww";
+            let baseModel = modelId === 6
+                ? "urn:air:sdxl:checkpoint:civitai:2186208@2461607" // Z Image Pro
+                : "urn:air:sdxl:checkpoint:civitai:827184@1183765"; // WAINSFWIllustrious
 
-            // TODO: Replace with exact CivitAI REST endpoint
             const response = await fetch("https://civitai.com/api/v1/images", {
                 method: "POST",
                 headers: {
