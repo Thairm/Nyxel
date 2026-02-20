@@ -13,6 +13,7 @@ import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
+import { getDefaultModel } from '@/data/modelData';
 
 // Navigation items for left sidebar with labels
 const navItems = [
@@ -40,6 +41,47 @@ export default function GeneratePage() {
   const [freeCreation, setFreeCreation] = useState(true);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!prompt.trim() || isGenerating) return;
+
+    setIsGenerating(true);
+    try {
+      // Use the default model for the current mode, or get selected from SettingsPanel state if stored there
+      const currentModel = getDefaultModel(mode === 'video' ? 'video' : 'image');
+      const endpoint = mode === 'video' ? '/api/generate/video' : '/api/generate/image';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelId: currentModel.id,
+          prompt,
+          params: {
+            ratio: selectedRatio,
+            quantity: mode === 'video' ? videoQuantity : imageQuantity,
+            resolution: videoResolution
+          }
+        })
+      });
+
+      const data = await response.json();
+      console.log('Generation response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate');
+      }
+
+      // TODO: Handle success (job ID polling vs immediate result)
+      // If it returns a job ID: start polling /api/generate/status
+    } catch (err) {
+      console.error(err);
+      alert('Error generating: ' + (err as Error).message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0D0F0E] flex">
@@ -116,8 +158,13 @@ export default function GeneratePage() {
 
       {/* Main Content Area */}
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">
-        <PreviewArea />
-        <PromptBar prompt={prompt} setPrompt={setPrompt} />
+        <PreviewArea isGenerating={isGenerating} />
+        <PromptBar
+          prompt={prompt}
+          setPrompt={setPrompt}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+        />
       </main>
 
       {/* Custom scrollbar styles */}

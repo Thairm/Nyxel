@@ -10,7 +10,8 @@ import {
     MessageSquare,
     Info,
     RotateCcw,
-    MoreVertical
+    MoreVertical,
+    RefreshCw
 } from 'lucide-react';
 
 // Sample generated images
@@ -32,7 +33,11 @@ const generatedVideos = [
 // Combined gallery
 const allGeneratedContent = [...generatedImages, ...generatedVideos];
 
-export function PreviewArea() {
+interface PreviewAreaProps {
+    isGenerating?: boolean;
+}
+
+export function PreviewArea({ isGenerating }: PreviewAreaProps) {
     return (
         <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
             {/* Top Toolbar */}
@@ -87,7 +92,16 @@ export function PreviewArea() {
             </div>
 
             {/* Generated Content Grid (Images + Videos) */}
-            <div className="grid grid-cols-4 gap-4 pb-40">
+            <div className={`grid grid-cols-4 gap-4 pb-40 relative transition-all duration-300 ${isGenerating ? 'opacity-50 blur-sm pointer-events-none' : ''}`}>
+
+                {isGenerating && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <div className="flex flex-col items-center gap-4 bg-black/60 p-6 rounded-2xl backdrop-blur-md border border-emerald-500/30">
+                            <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+                            <div className="text-emerald-400 font-medium">Generating...</div>
+                        </div>
+                    </div>
+                )}
                 {allGeneratedContent.map((item, index) => (
                     <div key={item.id} className="relative group">
                         <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
