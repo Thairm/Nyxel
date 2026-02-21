@@ -1,5 +1,24 @@
 // Video generation API with Atlas Cloud integration
 // Supports 15 video model variants across 5 base models
+// API params verified against official Atlas Cloud documentation
+
+// Helper: Map frontend aspect ratio to pixel size for Wan 2.6 T2V
+function ratioToWanVideoSize(ratio: string): string {
+    const sizeMap: Record<string, string> = {
+        '16:9': '1920*1080',
+        '9:16': '1080*1920',
+        '1:1': '960*960',
+        '4:3': '1088*832',
+        '3:4': '832*1088',
+    };
+    return sizeMap[ratio] || '1280*720';
+}
+
+// Helper: Map frontend aspect ratio to Sora 2 size format
+function ratioToSoraSize(ratio: string): string {
+    if (ratio === '9:16' || ratio === '2:3' || ratio === '3:4') return '720*1280';
+    return '1280*720'; // landscape/square default
+}
 
 export async function onRequestPost(context: any) {
     const { request, env } = context;
@@ -8,7 +27,7 @@ export async function onRequestPost(context: any) {
         const body = await request.json();
         const { modelId, variantId, prompt, params } = body;
 
-        if (!prompt && !variantId?.includes('i2v') && !variantId?.includes('i2v') && !variantId?.includes('ref')) {
+        if (!prompt && !variantId?.includes('i2v') && !variantId?.includes('ref')) {
             return new Response(JSON.stringify({ error: "Prompt is required for text-to-video" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
@@ -18,9 +37,8 @@ export async function onRequestPost(context: any) {
         const atlasCloudApiKey = env.ATLAS_CLOUD_API_KEY;
         if (!atlasCloudApiKey) throw new Error("Missing ATLAS_CLOUD_API_KEY");
 
-        // Model ID to API model name mapping
+        // Model + variant to API model name mapping
         const videoModelMap: Record<number, { baseName: string; variants: Record<string, string> }> = {
-            // Sora2 - 2 variants
             2: {
                 baseName: "openai/sora-2",
                 variants: {
@@ -28,7 +46,6 @@ export async function onRequestPost(context: any) {
                     "i2v": "openai/sora-2/image-to-video-pro-developer"
                 }
             },
-            // Veo3.1 - 4 variants
             3: {
                 baseName: "google/veo3.1",
                 variants: {
@@ -38,7 +55,6 @@ export async function onRequestPost(context: any) {
                     "fast-i2v": "google/veo3.1-fast/image-to-video"
                 }
             },
-            // Wan 2.6 Video - 3 variants
             4: {
                 baseName: "alibaba/wan-2.6",
                 variants: {
@@ -47,7 +63,6 @@ export async function onRequestPost(context: any) {
                     "flash-i2v": "alibaba/wan-2.6/image-to-video-flash"
                 }
             },
-            // Wan 2.2 - 2 variants
             5: {
                 baseName: "alibaba/wan-2.2",
                 variants: {
@@ -55,7 +70,6 @@ export async function onRequestPost(context: any) {
                     "i2v": "alibaba/wan-2.2/i2v-5b-720p-lora"
                 }
             },
-            // LTX-2 - 4 variants
             8: {
                 baseName: "lightricks/ltx-2",
                 variants: {
@@ -67,7 +81,6 @@ export async function onRequestPost(context: any) {
             }
         };
 
-        // Check if it's a supported video model
         const modelConfig = videoModelMap[modelId];
         if (!modelConfig) {
             return new Response(JSON.stringify({ error: "Unsupported video model" }), {
@@ -76,7 +89,6 @@ export async function onRequestPost(context: any) {
             });
         }
 
-        // Get the specific variant or use default
         const selectedVariant = variantId || Object.keys(modelConfig.variants)[0];
         const apiModelName = modelConfig.variants[selectedVariant];
 
@@ -87,96 +99,186 @@ export async function onRequestPost(context: any) {
             });
         }
 
-        // Build request body based on variant type
-        const requestBody: any = {
-            model: apiModelName,
-        };
+        // Build request body — each model has DIFFERENT params
+        let requestBody: any = { model: apiModelName };
 
-        // Add prompt for all variants
         if (prompt) {
             requestBody.prompt = prompt;
         }
 
-        // Add variant-specific parameters
-        if (selectedVariant.includes('t2v')) {
-            // Text-to-Video specific params
-            requestBody.duration = params?.duration || 5;
-            requestBody.resolution = params?.resolution || "720p";
-            
-            // Veo3.1 specific
-            if (modelId === 3) {
-                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
-                requestBody.generate_audio = params?.generate_audio ?? true;
-                if (params?.negative_prompt) requestBody.negative_prompt = params.negative_prompt;
-                if (params?.seed) requestBody.seed = params.seed;
-            }
-            
-            // LTX specific duration limits
-            if (modelId === 8) {
-                if (selectedVariant.includes('fast')) {
-                    requestBody.duration = Math.min(params?.duration || 5, 20); // Max 20s for fast
-                } else {
-                    requestBody.duration = [6, 8, 10].includes(params?.duration) ? params.duration : 6; // Pro only supports 6s/8s/10s
+        // ============================================
+        // SORA 2 (ID: 2) — t2v and i2v
+        // Params: model, prompt, duration(10/15/25), size("1280*720"/"720*1280")
+        // I2V additionally: image (required)
+        // ============================================
+        if (modelId === 2) {
+            const validDurations = [10, 15, 25];
+            requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 10;
+            requestBody.size = ratioToSoraSize(params?.ratio || params?.aspect_ratio || "16:9");
+
+            if (selectedVariant === 'i2v') {
+                if (!params?.image) {
+                    return new Response(JSON.stringify({ error: "Image is required for Sora 2 I2V" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
                 }
-                if (params?.audio) requestBody.audio = params.audio;
-            }
-            
-            // Wan 2.6/2.2 specific
-            if (modelId === 4 || modelId === 5) {
-                requestBody.duration = Math.min(params?.duration || 5, 15); // Max 15s
-                if (params?.aspect_ratio) requestBody.aspect_ratio = params.aspect_ratio;
+                requestBody.image = params.image;
             }
         }
 
-        if (selectedVariant.includes('i2v') || selectedVariant.includes('ref2v')) {
-            // Image-to-Video and Reference-to-Video require images
-            if (!params?.image && !params?.images) {
-                return new Response(JSON.stringify({ 
-                    error: `${selectedVariant} requires an image input` 
-                }), {
-                    status: 400,
-                    headers: { "Content-Type": "application/json" }
-                });
+        // ============================================
+        // VEO 3.1 (ID: 3) — t2v, ref2v, i2v, fast-i2v
+        // T2V: model, prompt, aspect_ratio, duration(4/6/8), resolution(720p/1080p),
+        //      generate_audio, negative_prompt, seed
+        // Ref2V: + images(array 1-3), no aspect_ratio or duration
+        // I2V/Fast-I2V: + image, last_image, aspect_ratio, duration
+        // ============================================
+        if (modelId === 3) {
+            if (selectedVariant === 't2v') {
+                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
+                const validDurations = [4, 6, 8];
+                requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 4;
+                requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
+                requestBody.generate_audio = params?.generate_audio ?? false;
+                if (params?.negative_prompt || params?.negativePrompt) {
+                    requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
+                }
+                if (params?.seed !== undefined) requestBody.seed = params.seed;
             }
 
             if (selectedVariant === 'ref2v') {
-                // Reference-to-Video uses multiple images (1-3)
-                requestBody.images = params.images || [params.image];
-            } else {
-                // Image-to-Video uses single image
-                requestBody.image = params.image;
-            }
-
-            // Veo3.1 I2V specific
-            if (modelId === 3 && selectedVariant.includes('i2v')) {
-                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
-                requestBody.duration = params?.duration || 5;
-                requestBody.generate_audio = params?.generate_audio ?? true;
-                requestBody.resolution = params?.resolution || "720p";
-                if (params?.negative_prompt) requestBody.negative_prompt = params.negative_prompt;
-                if (params?.last_image) requestBody.last_image = params.last_image;
-                if (params?.seed) requestBody.seed = params.seed;
-            }
-
-            // Wan 2.6 I2V specific
-            if (modelId === 4 && selectedVariant.includes('i2v')) {
-                requestBody.duration = Math.min(params?.duration || 5, 15);
-                requestBody.resolution = params?.resolution || "720p";
-            }
-
-            // LTX I2V specific
-            if (modelId === 8 && selectedVariant.includes('i2v')) {
-                if (selectedVariant.includes('fast')) {
-                    requestBody.duration = Math.min(params?.duration || 5, 20);
-                } else {
-                    requestBody.duration = [6, 8, 10].includes(params?.duration) ? params.duration : 6;
+                if (!params?.images && !params?.image) {
+                    return new Response(JSON.stringify({ error: "Images required for Veo 3.1 Reference-to-Video (1-3 images)" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
                 }
+                requestBody.images = params.images || [params.image];
+                requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
+                requestBody.generate_audio = params?.generate_audio ?? false;
+                if (params?.negative_prompt || params?.negativePrompt) {
+                    requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
+                }
+                if (params?.seed !== undefined) requestBody.seed = params.seed;
             }
 
-            // Sora2 I2V specific - requires resolution match
-            if (modelId === 2 && selectedVariant === 'i2v') {
-                requestBody.resolution = params?.resolution || "720p";
-                // Note: Input image must match output resolution (720x1280 or 1280x720)
+            if (selectedVariant === 'i2v' || selectedVariant === 'fast-i2v') {
+                if (!params?.image) {
+                    return new Response(JSON.stringify({ error: "Image required for Veo 3.1 Image-to-Video" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+                requestBody.image = params.image;
+                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
+                const validDurations = [4, 6, 8];
+                requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 4;
+                requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
+                requestBody.generate_audio = params?.generate_audio ?? false;
+                if (params?.negative_prompt || params?.negativePrompt) {
+                    requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
+                }
+                if (params?.last_image) requestBody.last_image = params.last_image;
+                if (params?.seed !== undefined) requestBody.seed = params.seed;
+            }
+        }
+
+        // ============================================
+        // WAN 2.6 VIDEO (ID: 4) — t2v, i2v, flash-i2v
+        // T2V: model, prompt, size(pixel format!), duration(5/10/15),
+        //      negative_prompt, enable_prompt_expansion, shot_type, generate_audio, audio, seed
+        // I2V/Flash: model, prompt, image, resolution(720p/1080p), duration(5/10/15),
+        //            negative_prompt, enable_prompt_expansion, shot_type, generate_audio, audio, seed
+        // ============================================
+        if (modelId === 4) {
+            if (selectedVariant === 't2v') {
+                requestBody.size = ratioToWanVideoSize(params?.ratio || params?.aspect_ratio || "16:9");
+                const validDurations = [5, 10, 15];
+                requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 5;
+                requestBody.generate_audio = params?.generate_audio ?? true;
+                requestBody.enable_prompt_expansion = params?.enable_prompt_expansion ?? true;
+                requestBody.shot_type = params?.shot_type || "multi";
+                if (params?.negative_prompt || params?.negativePrompt) {
+                    requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
+                }
+                if (params?.seed !== undefined) requestBody.seed = params.seed;
+            }
+
+            if (selectedVariant === 'i2v' || selectedVariant === 'flash-i2v') {
+                if (!params?.image) {
+                    return new Response(JSON.stringify({ error: "Image required for Wan 2.6 Image-to-Video" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+                requestBody.image = params.image;
+                requestBody.resolution = params?.resolution === "1080p" ? "1080p" : "720p";
+                const validDurations = [5, 10, 15];
+                requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 5;
+                requestBody.generate_audio = params?.generate_audio ?? true;
+                requestBody.enable_prompt_expansion = params?.enable_prompt_expansion ?? true;
+                requestBody.shot_type = params?.shot_type || "multi";
+                if (params?.negative_prompt || params?.negativePrompt) {
+                    requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
+                }
+                if (params?.seed !== undefined) requestBody.seed = params.seed;
+            }
+        }
+
+        // ============================================
+        // WAN 2.2 (ID: 5) — t2v and i2v
+        // T2V: model, prompt, size("1280*720"/"720*1280"), seed, loras
+        // I2V: model, prompt, image, seed, loras
+        // NOTE: NO duration, NO resolution, NO aspect_ratio params!
+        // ============================================
+        if (modelId === 5) {
+            if (selectedVariant === 't2v') {
+                const ratio = params?.ratio || params?.aspect_ratio || "16:9";
+                requestBody.size = (ratio === '9:16' || ratio === '2:3' || ratio === '3:4')
+                    ? '720*1280' : '1280*720';
+                requestBody.seed = params?.seed ?? -1;
+                requestBody.loras = params?.loras || [];
+            }
+
+            if (selectedVariant === 'i2v') {
+                if (!params?.image) {
+                    return new Response(JSON.stringify({ error: "Image required for Wan 2.2 I2V" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+                requestBody.image = params.image;
+                requestBody.seed = params?.seed ?? -1;
+                requestBody.loras = params?.loras || [];
+            }
+        }
+
+        // ============================================
+        // LTX-2 (ID: 8) — fast-t2v, fast-i2v, pro-t2v, pro-i2v
+        // All: model, prompt, duration, generate_audio
+        // I2V variants additionally: image
+        // Fast duration: 6,8,10,12,14,16,18,20
+        // Pro duration: 6,8,10 only
+        // NOTE: NO resolution, NO audio URL param!
+        // ============================================
+        if (modelId === 8) {
+            const isFast = selectedVariant.includes('fast');
+            const validFastDurations = [6, 8, 10, 12, 14, 16, 18, 20];
+            const validProDurations = [6, 8, 10];
+            const validDurations = isFast ? validFastDurations : validProDurations;
+
+            requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 6;
+            requestBody.generate_audio = params?.generate_audio ?? true;
+
+            if (selectedVariant.includes('i2v')) {
+                if (!params?.image) {
+                    return new Response(JSON.stringify({ error: "Image required for LTX-2 I2V" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+                requestBody.image = params.image;
             }
         }
 
@@ -192,11 +294,11 @@ export async function onRequestPost(context: any) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-            throw new Error(errorData.error || `Atlas Cloud API error: ${response.status}`);
+            throw new Error(errorData.error || errorData.message || `Atlas Cloud API error: ${response.status}`);
         }
 
         const data = await response.json();
-        
+
         return new Response(JSON.stringify({
             success: true,
             model: modelId,

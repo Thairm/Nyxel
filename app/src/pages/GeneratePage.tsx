@@ -42,7 +42,7 @@ export default function GeneratePage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   // Model and variant selection state
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
@@ -63,8 +63,8 @@ export default function GeneratePage() {
         prompt,
         params: {
           ratio: selectedRatio,
-          quantity: mode === 'video' ? videoQuantity : imageQuantity,
-          resolution: videoResolution
+          aspect_ratio: selectedRatio,
+          ...(mode === 'video' ? { duration: videoDuration } : {}),
         }
       };
 
