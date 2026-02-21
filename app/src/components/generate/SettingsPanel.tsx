@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
-import { getDefaultModel, hasVariants, getVariantById } from '@/data/modelData';
+import { hasVariants, getVariantById } from '@/data/modelData';
 import type { Model } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 

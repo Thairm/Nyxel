@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Image, Video, Info, ChevronDown } from 'lucide-react';
-import { imageModels, videoModels, hasVariants, getVariantById, type Model, type ModelVariant } from '@/data/modelData';
+import { imageModels, videoModels, hasVariants, type Model, type ModelVariant } from '@/data/modelData';
 
 interface ModelSelectorModalProps {
     isOpen: boolean;
@@ -21,7 +21,6 @@ export function ModelSelectorModal({
 }: ModelSelectorModalProps) {
     const [activeTab, setActiveTab] = useState<'image' | 'video'>(initialMode);
     const [expandedModelId, setExpandedModelId] = useState<number | null>(null);
-    const [hoveredVariant, setHoveredVariant] = useState<string | null>(null);
 
     // Sync tab with initial mode when modal opens
     useEffect(() => {
@@ -200,12 +199,10 @@ export function ModelSelectorModal({
                                             </div>
                                             <div className="max-h-48 overflow-y-auto">
                                                 {model.variants?.map((variant) => (
-                                                    <button
-                                                        key={variant.id}
-                                                        onClick={(e) => handleVariantSelect(model, variant, e)}
-                                                        onMouseEnter={() => setHoveredVariant(variant.id)}
-                                                        onMouseLeave={() => setHoveredVariant(null)}
-                                                        className={`w-full text-left p-3 transition-colors ${selectedModelId === model.id && selectedVariantId === variant.id
+                                                <button
+                                                    key={variant.id}
+                                                    onClick={(e) => handleVariantSelect(model, variant, e)}
+                                                    className={`w-full text-left p-3 transition-colors ${selectedModelId === model.id && selectedVariantId === variant.id
                                                                 ? 'bg-emerald-500/20'
                                                                 : 'hover:bg-white/5'
                                                             }`}
