@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
-import { getDefaultModel } from '@/data/modelData';
+import { getDefaultModel, hasVariants, getVariantById } from '@/data/modelData';
 import type { Model } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 
@@ -67,6 +67,11 @@ interface SettingsPanelProps {
     setFreeCreation: (val: boolean) => void;
     advancedOpen: boolean;
     setAdvancedOpen: (val: boolean) => void;
+    // Model and variant selection
+    selectedModel: Model;
+    setSelectedModel: (model: Model) => void;
+    selectedVariantId?: string;
+    setSelectedVariantId?: (variantId: string) => void;
 }
 
 export function SettingsPanel({
@@ -90,24 +95,39 @@ export function SettingsPanel({
     freeCreation,
     setFreeCreation,
     advancedOpen,
-    setAdvancedOpen
+    setAdvancedOpen,
+    selectedModel,
+    setSelectedModel,
+    selectedVariantId,
+    setSelectedVariantId
 }: SettingsPanelProps) {
     const navigate = useNavigate();
     const isVideoMode = mode === 'video';
 
-    // Model selection state
+    // Model selection modal state
     const [showModelModal, setShowModelModal] = useState(false);
-    const [selectedModel, setSelectedModel] = useState<Model>(
-        getDefaultModel(isVideoMode ? 'video' : 'image')
-    );
 
-    const handleModelSelect = (model: Model) => {
+    // Get current variant info
+    const currentVariant = hasVariants(selectedModel) && selectedVariantId
+        ? getVariantById(selectedModel, selectedVariantId)
+        : undefined;
+
+    const handleModelSelect = (model: Model, variantId?: string) => {
         setSelectedModel(model);
+        if (setSelectedVariantId && variantId) {
+            setSelectedVariantId(variantId);
+        }
         // Navigate to the correct mode based on model type
         if (model.type === 'video' && !isVideoMode) {
             navigate('/generate/video');
         } else if (model.type === 'image' && isVideoMode) {
             navigate('/generate/image');
+        }
+    };
+
+    const handleVariantChange = (variantId: string) => {
+        if (setSelectedVariantId) {
+            setSelectedVariantId(variantId);
         }
     };
 
@@ -166,7 +186,9 @@ export function SettingsPanel({
                     {/* Content */}
                     <div className="relative p-3 flex items-center justify-between">
                         <div className="flex flex-col items-start gap-1">
-                            <span className="text-gray-400 text-[10px] uppercase tracking-wide">Model</span>
+                            <span className="text-gray-400 text-[10px] uppercase tracking-wide">
+                                {hasVariants(selectedModel) && currentVariant ? currentVariant.name : 'Model'}
+                            </span>
                             <div className="flex items-center gap-2">
                                 <span className="text-white text-sm font-semibold">{selectedModel.name}</span>
                                 <Info className="w-3 h-3 text-gray-500" />
@@ -178,7 +200,56 @@ export function SettingsPanel({
                     </div>
                 </button>
 
-                <button className="w-full mt-2 p-2.5 bg-[#1A1E1C] rounded-lg border border-white/5 text-gray-400 text-sm hover:text-white hover:border-white/10 transition-colors flex items-center justify-center gap-2">
+                {/* Variant Selector (for video models with variants) */}
+                {hasVariants(selectedModel) && (
+                    <div className="mt-3">
+                        <span className="text-gray-400 text-[10px] uppercase tracking-wide block mb-2">Variant</span>
+                        <div className="relative">
+                            <select
+                                value={selectedVariantId || selectedModel.defaultVariant}
+                                onChange={(e) => handleVariantChange(e.target.value)}
+                                className="w-full appearance-none bg-[#1A1E1C] border border-white/5 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/30"
+                            >
+                                {selectedModel.variants?.map((variant) => (
+                                    <option key={variant.id} value={variant.id}>
+                                        {variant.name} - {variant.pricing}/{variant.pricingUnit === 'per_sec' ? 'sec' : 'pic'}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
+                        
+                        {/* Variant Description */}
+                        {currentVariant?.description && (
+                            <p className="text-gray-600 text-[10px] mt-2">
+                                {currentVariant.description}
+                            </p>
+                        )}
+
+                        {/* Input Type Indicators */}
+                        {currentVariant && (
+                            <div className="flex gap-1 mt-2">
+                                {currentVariant.supportedInputs.includes('text') && (
+                                    <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] rounded">
+                                        Text
+                                    </span>
+                                )}
+                                {currentVariant.supportedInputs.includes('image') && (
+                                    <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[9px] rounded">
+                                        Image
+                                    </span>
+                                )}
+                                {currentVariant.supportedInputs.includes('video') && (
+                                    <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] rounded">
+                                        Video
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <button className="w-full mt-3 p-2.5 bg-[#1A1E1C] rounded-lg border border-white/5 text-gray-400 text-sm hover:text-white hover:border-white/10 transition-colors flex items-center justify-center gap-2">
                     <LayoutTemplate className="w-4 h-4" />
                     Combo Library
                     <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px] border-0 ml-1">NEW</Badge>
@@ -192,6 +263,7 @@ export function SettingsPanel({
                 onSelect={handleModelSelect}
                 initialMode={isVideoMode ? 'video' : 'image'}
                 selectedModelId={selectedModel.id}
+                selectedVariantId={selectedVariantId}
             />
 
             {/* Scrollable Settings Area */}

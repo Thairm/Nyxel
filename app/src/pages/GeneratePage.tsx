@@ -13,7 +13,7 @@ import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
-import { getDefaultModel } from '@/data/modelData';
+import { getDefaultModel, type Model } from '@/data/modelData';
 
 // Navigation items for left sidebar with labels
 const navItems = [
@@ -42,28 +42,41 @@ export default function GeneratePage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Model and variant selection state
+  const [selectedModel, setSelectedModel] = useState<Model>(
+    getDefaultModel(mode === 'video' ? 'video' : 'image')
+  );
+  const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
+    selectedModel.defaultVariant
+  );
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
 
     setIsGenerating(true);
     try {
-      // Use the default model for the current mode, or get selected from SettingsPanel state if stored there
-      const currentModel = getDefaultModel(mode === 'video' ? 'video' : 'image');
       const endpoint = mode === 'video' ? '/api/generate/video' : '/api/generate/image';
+
+      const requestBody: any = {
+        modelId: selectedModel.id,
+        prompt,
+        params: {
+          ratio: selectedRatio,
+          quantity: mode === 'video' ? videoQuantity : imageQuantity,
+          resolution: videoResolution
+        }
+      };
+
+      // Add variant ID for video models
+      if (mode === 'video' && selectedVariantId) {
+        requestBody.variantId = selectedVariantId;
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelId: currentModel.id,
-          prompt,
-          params: {
-            ratio: selectedRatio,
-            quantity: mode === 'video' ? videoQuantity : imageQuantity,
-            resolution: videoResolution
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
@@ -154,6 +167,10 @@ export default function GeneratePage() {
         setFreeCreation={setFreeCreation}
         advancedOpen={advancedOpen}
         setAdvancedOpen={setAdvancedOpen}
+        selectedModel={selectedModel}
+        setSelectedModel={setSelectedModel}
+        selectedVariantId={selectedVariantId}
+        setSelectedVariantId={setSelectedVariantId}
       />
 
       {/* Main Content Area */}

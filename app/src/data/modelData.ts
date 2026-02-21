@@ -1,23 +1,40 @@
 // Shared model data for use across the application
-// Each model can have flexible properties that control what's displayed
+// Updated with Atlas Cloud and Civitai model integrations
+
+export interface ModelVariant {
+    id: string;
+    name: string;
+    apiModelName?: string;
+    civitaiUrn?: string;
+    supportedInputs: ('text' | 'image' | 'video')[];
+    description?: string;
+    pricing: string;
+    pricingUnit?: 'per_sec' | 'per_pic';
+}
 
 export interface Model {
     id: number;
     name: string;
     version: string;
     type: 'image' | 'video';
-    category: string;  // e.g., "Image Generation", "AI App", "AI Model"
+    category: string;
     image: string;
-    // Flexible per-model properties:
-    free?: boolean;       // Shows "Free" badge if true
-    badge?: string;       // Custom badge text (e.g., "Checkpoint", "APP", "NEW", "PRO")
-    featured?: boolean;   // Highlight in listings
-    description?: string; // Optional description
-    rating?: number;      // Optional rating (for hub page)
+    free?: boolean;
+    badge?: string;
+    featured?: boolean;
+    description?: string;
+    rating?: number;
+    // Variant support for video models
+    variants?: ModelVariant[];
+    defaultVariant?: string;
 }
 
-// Image generation models
+// ============================================
+// IMAGE GENERATION MODELS (11 total)
+// ============================================
+
 export const imageModels: Model[] = [
+    // Atlas Cloud Image Models
     {
         id: 1,
         name: 'Nano Banana Pro',
@@ -28,33 +45,129 @@ export const imageModels: Model[] = [
         free: true,
         badge: 'Checkpoint',
         featured: true,
-        rating: 4.8
+        rating: 4.8,
+        description: 'Google\'s next-generation image model with superior text rendering and character consistency',
     },
     {
+        id: 15,
+        name: 'Wan 2.6 Text-to-Image',
+        version: 'v2.6',
+        type: 'image',
+        category: 'Image Generation',
+        image: '/model-wan26-t2i.jpg',
+        badge: 'NEW',
+        rating: 4.7,
+        description: 'Alibaba\'s advanced text-to-image model with multiple artistic styles',
+    },
+    {
+        id: 16,
+        name: 'Wan 2.6 Image Edit',
+        version: 'v2.6',
+        type: 'image',
+        category: 'Image Editing',
+        image: '/model-wan26-edit.jpg',
+        badge: 'NEW',
+        rating: 4.6,
+        description: 'Edit existing images with text prompts while preserving structure',
+    },
+    // Civitai Image Models
+    {
         id: 6,
-        name: 'Z Image',
+        name: 'Z Image Base',
         version: 'v1.0',
         type: 'image',
         category: 'AI Model',
         image: '/model-zimage.png',
         free: true,
         badge: 'NEW',
-        rating: 4.9
+        rating: 4.9,
+        description: 'Alibaba\'s 6B parameter standalone image model',
     },
     {
         id: 7,
-        name: 'WAINSFWIllustrious',
+        name: 'WAI-illustrious-SDXL',
         version: 'v1.0',
         type: 'image',
         category: 'AI Model',
         image: '/model-wainsfwillustrious.png',
         badge: 'Checkpoint',
-        rating: 4.8
+        rating: 4.8,
+        description: 'Illustrious-based SDXL model for high-quality image generation',
+    },
+    {
+        id: 9,
+        name: 'Hassaku XL Illustrious',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-hassaku.jpg',
+        badge: 'Checkpoint',
+        rating: 4.7,
+        description: 'Illustrious-based model with excellent anime and artistic styles',
+    },
+    {
+        id: 10,
+        name: 'Prefect Illustrious XL',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-prefect.jpg',
+        badge: 'Checkpoint',
+        rating: 4.8,
+        description: 'High-quality Illustrious-based model with refined outputs',
+    },
+    {
+        id: 11,
+        name: 'NoobAI XL',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-noobai.jpg',
+        badge: 'Checkpoint',
+        rating: 4.6,
+        description: 'Pony-based SDXL model for diverse artistic styles',
+    },
+    {
+        id: 12,
+        name: 'Illustrious XL',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-illustrious.jpg',
+        badge: 'Checkpoint',
+        rating: 4.9,
+        description: 'Base Illustrious SDXL model for professional image generation',
+    },
+    {
+        id: 13,
+        name: 'Indigo Void Furry Fused XL',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-indigo.jpg',
+        badge: 'NEW',
+        rating: 4.5,
+        description: 'NoobAI-based model specialized for furry and anthropomorphic art',
+    },
+    {
+        id: 14,
+        name: 'BoytakuDream merge',
+        version: 'v1.0',
+        type: 'image',
+        category: 'AI Model',
+        image: '/model-boytaku.jpg',
+        badge: 'Checkpoint',
+        rating: 4.7,
+        description: 'Illustrious-based merged model with unique artistic style',
     },
 ];
 
-// Video generation models
+// ============================================
+// VIDEO GENERATION MODELS (5 base models, 15 variants)
+// ============================================
+
 export const videoModels: Model[] = [
+    // Sora2 - 2 variants
     {
         id: 2,
         name: 'Sora2',
@@ -64,8 +177,32 @@ export const videoModels: Model[] = [
         image: '/model-2.jpg',
         free: true,
         badge: 'APP',
-        rating: 4.6
+        featured: true,
+        rating: 4.6,
+        description: 'OpenAI\'s physics-accurate video generation with synchronized audio',
+        variants: [
+            {
+                id: 't2v',
+                name: 'Text-to-Video',
+                apiModelName: 'openai/sora-2/text-to-video-pro-developer',
+                supportedInputs: ['text'],
+                description: 'Generate videos from text prompts with physics-accurate motion',
+                pricing: '$0.15',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'i2v',
+                name: 'Image-to-Video',
+                apiModelName: 'openai/sora-2/image-to-video-pro-developer',
+                supportedInputs: ['text', 'image'],
+                description: 'Transform images into videos with motion and audio',
+                pricing: '$0.15',
+                pricingUnit: 'per_sec'
+            }
+        ],
+        defaultVariant: 't2v'
     },
+    // Veo3.1 - 4 variants
     {
         id: 3,
         name: 'Veo3.1',
@@ -74,38 +211,174 @@ export const videoModels: Model[] = [
         category: 'AI Model',
         image: '/model-3.jpg',
         badge: 'Checkpoint',
-        rating: 5.0
+        rating: 5.0,
+        description: 'Google\'s advanced video model with temporal consistency',
+        variants: [
+            {
+                id: 't2v',
+                name: 'Text-to-Video',
+                apiModelName: 'google/veo3.1/text-to-video',
+                supportedInputs: ['text'],
+                description: 'Generate 4-8s videos from text with audio',
+                pricing: '$0.16',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'ref2v',
+                name: 'Reference-to-Video',
+                apiModelName: 'google/veo3.1/reference-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Use 1-3 reference images for character consistency',
+                pricing: '$0.16',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'i2v',
+                name: 'Image-to-Video',
+                apiModelName: 'google/veo3.1/image-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Animate images into videos with camera motion',
+                pricing: '$0.16',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'fast-i2v',
+                name: 'Fast Image-to-Video',
+                apiModelName: 'google/veo3.1-fast/image-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Faster I2V generation at lower cost',
+                pricing: '$0.08',
+                pricingUnit: 'per_sec'
+            }
+        ],
+        defaultVariant: 't2v'
     },
+    // Wan 2.6 Video - 3 variants (NOTE: different from Wan 2.6 Image models)
     {
         id: 4,
-        name: 'Wan 2.6',
+        name: 'Wan 2.6 Video',
         version: 'v2.6',
         type: 'video',
         category: 'AI Model',
         image: '/model-4.jpg',
         free: true,
         badge: 'Checkpoint',
-        rating: 4.7
+        rating: 4.7,
+        description: 'Alibaba\'s multi-shot video generation up to 15 seconds',
+        variants: [
+            {
+                id: 't2v',
+                name: 'Text-to-Video',
+                apiModelName: 'alibaba/wan-2.6/text-to-video',
+                supportedInputs: ['text'],
+                description: 'Generate 5-15s videos with multi-shot storytelling',
+                pricing: '$0.07',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'i2v',
+                name: 'Image-to-Video',
+                apiModelName: 'alibaba/wan-2.6/image-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Transform images into motion videos',
+                pricing: '$0.07',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'flash-i2v',
+                name: 'Image-to-Video Flash',
+                apiModelName: 'alibaba/wan-2.6/image-to-video-flash',
+                supportedInputs: ['text', 'image'],
+                description: 'Faster and more cost-effective I2V (30% off)',
+                pricing: '$0.018',
+                pricingUnit: 'per_sec'
+            }
+        ],
+        defaultVariant: 't2v'
     },
+    // Wan 2.2 - 2 variants
     {
         id: 5,
-        name: 'Wan2.2',
+        name: 'Wan 2.2',
         version: 'v2.2',
         type: 'video',
         category: 'AI Model',
         image: '/model-5.jpg',
         badge: 'Checkpoint',
-        rating: 4.9
+        rating: 4.9,
+        description: '5B parameter MoE model with cinematic-level aesthetic control',
+        variants: [
+            {
+                id: 't2v',
+                name: 'Text-to-Video 720p',
+                apiModelName: 'alibaba/wan-2.2/t2v-5b-720p-lora',
+                supportedInputs: ['text'],
+                description: '720p video generation with LoRA support',
+                pricing: '$0.10',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'i2v',
+                name: 'Image-to-Video 720p',
+                apiModelName: 'alibaba/wan-2.2/i2v-5b-720p-lora',
+                supportedInputs: ['text', 'image'],
+                description: '720p I2V with cinematic motion',
+                pricing: '$0.10',
+                pricingUnit: 'per_sec'
+            }
+        ],
+        defaultVariant: 't2v'
     },
+    // LTX-2 - 4 variants
     {
         id: 8,
-        name: 'Ltx2',
+        name: 'LTX-2',
         version: 'v2.0',
         type: 'video',
         category: 'AI Model',
         image: '/model-ltx2.png',
         badge: 'NEW',
-        rating: 4.7
+        rating: 4.7,
+        description: 'Lightricks\' cinematic video engine with A/V sync',
+        variants: [
+            {
+                id: 'fast-t2v',
+                name: 'Fast Text-to-Video',
+                apiModelName: 'lightricks/ltx-2-fast/text-to-video',
+                supportedInputs: ['text'],
+                description: 'Ultra-fast generation up to 20 seconds',
+                pricing: '$0.04',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'fast-i2v',
+                name: 'Fast Image-to-Video',
+                apiModelName: 'lightricks/ltx-2-fast/image-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Animate images quickly up to 20s',
+                pricing: '$0.04',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'pro-t2v',
+                name: 'Pro Text-to-Video',
+                apiModelName: 'lightricks/ltx-2-pro/text-to-video',
+                supportedInputs: ['text'],
+                description: 'Higher quality 6-10s videos with precise control',
+                pricing: '$0.06',
+                pricingUnit: 'per_sec'
+            },
+            {
+                id: 'pro-i2v',
+                name: 'Pro Image-to-Video',
+                apiModelName: 'lightricks/ltx-2-pro/image-to-video',
+                supportedInputs: ['text', 'image'],
+                description: 'Professional-grade I2V with superior consistency',
+                pricing: '$0.06',
+                pricingUnit: 'per_sec'
+            }
+        ],
+        defaultVariant: 'fast-t2v'
     },
 ];
 
@@ -117,8 +390,22 @@ export function getDefaultModel(mode: 'image' | 'video'): Model {
     return mode === 'video' ? videoModels[0] : imageModels[0];
 }
 
-// Helper to format models for Hub page display (compatible with existing ModelCard)
-// This returns ALL models (both image and video) for the hub page
+// Helper to get model by ID
+export function getModelById(id: number): Model | undefined {
+    return allModels.find(model => model.id === id);
+}
+
+// Helper to check if model has variants
+export function hasVariants(model: Model): boolean {
+    return model.variants !== undefined && model.variants.length > 0;
+}
+
+// Helper to get variant by ID
+export function getVariantById(model: Model, variantId: string): ModelVariant | undefined {
+    return model.variants?.find(v => v.id === variantId);
+}
+
+// Helper to format models for Hub page display
 export function getHubModels() {
     return allModels.map(model => ({
         id: model.id,
@@ -127,6 +414,32 @@ export function getHubModels() {
         rating: model.rating || 0,
         image: model.image,
         badge: model.badge || '',
-        free: model.free || false
+        free: model.free || false,
+        description: model.description || ''
     }));
+}
+
+// Helper to check if model supports image input
+export function supportsImageInput(model: Model, variantId?: string): boolean {
+    if (!hasVariants(model)) {
+        // For image models, check if it's Wan 2.6 Image Edit (ID 16)
+        return model.id === 16; // Only Image Edit requires image input
+    }
+    
+    // For video models, check the variant
+    const variant = variantId ? getVariantById(model, variantId) : model.variants?.[0];
+    return variant?.supportedInputs.includes('image') || false;
+}
+
+// Helper to check if model requires image input
+export function requiresImageInput(model: Model, variantId?: string): boolean {
+    if (model.id === 16) return true; // Wan 2.6 Image Edit always requires image
+    
+    if (!hasVariants(model)) return false;
+    
+    const variant = variantId ? getVariantById(model, variantId) : model.variants?.[0];
+    if (!variant) return false;
+    
+    // Check if it's I2V or Ref2V variant (requires image)
+    return variant.id.includes('i2v') || variant.id.includes('ref');
 }
