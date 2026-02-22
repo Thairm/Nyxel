@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import {
     Play,
     Download,
@@ -10,6 +9,7 @@ import {
     RefreshCw,
     ImageIcon,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type { GeneratedItem } from '@/pages/GeneratePage';
 
 interface PreviewAreaProps {
@@ -18,11 +18,28 @@ interface PreviewAreaProps {
     pendingCount?: number;
 }
 
+// Group items by batchId, preserving order of first appearance
+function groupByBatch(items: GeneratedItem[]): { batchId: string; items: GeneratedItem[] }[] {
+    const batchMap = new Map<string, GeneratedItem[]>();
+    const batchOrder: string[] = [];
+
+    for (const item of items) {
+        const bid = item.batchId;
+        if (!batchMap.has(bid)) {
+            batchMap.set(bid, []);
+            batchOrder.push(bid);
+        }
+        batchMap.get(bid)!.push(item);
+    }
+
+    return batchOrder.map(bid => ({ batchId: bid, items: batchMap.get(bid)! }));
+}
+
 export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 0 }: PreviewAreaProps) {
     const hasContent = generatedItems.length > 0 || isGenerating;
 
-    // Reverse so oldest is at top, newest at bottom
-    const displayItems = [...generatedItems].reverse();
+    // Group by batch and reverse so oldest batches are at top, newest at bottom
+    const batches = groupByBatch([...generatedItems].reverse());
 
     return (
         <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
@@ -63,85 +80,93 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                 </div>
             )}
 
-            {/* Generated Content — Vertical feed, each generation is its own row */}
+            {/* Generated Content — Each batch is a row, images side-by-side */}
             {hasContent && (
-                <div className="flex flex-col gap-4 pb-40">
+                <div className="flex flex-col gap-6 pb-40">
 
-                    {/* Past generations — oldest at top, newest at bottom */}
-                    {displayItems.map((item, index) => (
-                        <div key={item.id} className="flex gap-4">
-                            {/* Generation row */}
-                            <div className="relative group w-64 shrink-0">
-                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
-                                    {item.mediaType === 'video' ? (
-                                        <>
-                                            <video
-                                                src={item.mediaUrl}
-                                                className="w-full h-auto object-cover"
-                                                muted
-                                                loop
-                                                onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
-                                                onMouseLeave={(e) => {
-                                                    const v = e.target as HTMLVideoElement;
-                                                    v.pause();
-                                                    v.currentTime = 0;
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:hidden">
-                                                <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                                    <Play className="w-6 h-6 text-white fill-white" />
-                                                </div>
-                                            </div>
-                                            <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/60 flex items-center gap-1">
-                                                <Video className="w-3 h-3 text-white" />
-                                                <span className="text-white text-xs">Video</span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <img
-                                            src={item.mediaUrl}
-                                            alt={item.prompt || `Generated ${index + 1}`}
-                                            className="w-full h-auto object-cover"
-                                            loading="lazy"
-                                        />
-                                    )}
-
-                                    {/* Hover Overlay */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                                        <div className="flex gap-2 w-full">
-                                            <a
-                                                href={item.mediaUrl}
-                                                download
-                                                className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-                                            >
-                                                <Download className="w-4 h-4" />
-                                            </a>
-                                            <button className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-                                                <Share2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                    {batches.map((batch) => (
+                        <div key={batch.batchId} className="space-y-2">
+                            {/* Batch prompt label */}
+                            <div className="flex items-center gap-2">
+                                <p className="text-gray-500 text-xs truncate max-w-lg">{batch.items[0].prompt}</p>
+                                <span className="text-gray-700 text-[10px] shrink-0">
+                                    {new Date(batch.items[0].createdAt).toLocaleString()} · {batch.items.length} {batch.items.length === 1 ? 'image' : 'images'}
+                                </span>
                             </div>
 
-                            {/* Prompt text beside the image */}
-                            <div className="flex flex-col justify-center min-w-0">
-                                <p className="text-gray-400 text-sm truncate max-w-md">{item.prompt}</p>
-                                <p className="text-gray-600 text-xs mt-1">
-                                    {new Date(item.createdAt).toLocaleString()}
-                                </p>
+                            {/* Images row — side by side */}
+                            <div className="flex gap-3 flex-wrap">
+                                {batch.items.map((item, index) => (
+                                    <div key={item.id} className="relative group w-56 shrink-0">
+                                        <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
+                                            {item.mediaType === 'video' ? (
+                                                <>
+                                                    <video
+                                                        src={item.mediaUrl}
+                                                        className="w-full h-auto object-cover"
+                                                        muted
+                                                        loop
+                                                        onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                                                        onMouseLeave={(e) => {
+                                                            const v = e.target as HTMLVideoElement;
+                                                            v.pause();
+                                                            v.currentTime = 0;
+                                                        }}
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:hidden">
+                                                        <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                                            <Play className="w-5 h-5 text-white fill-white" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 flex items-center gap-1">
+                                                        <Video className="w-3 h-3 text-white" />
+                                                        <span className="text-white text-[10px]">Video</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <img
+                                                    src={item.mediaUrl}
+                                                    alt={item.prompt || `Generated ${index + 1}`}
+                                                    className="w-full h-auto object-cover"
+                                                    loading="lazy"
+                                                />
+                                            )}
+
+                                            {/* Hover Overlay */}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                                <div className="flex gap-1.5">
+                                                    <a
+                                                        href={item.mediaUrl}
+                                                        download
+                                                        className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                                                    >
+                                                        <Download className="w-3.5 h-3.5" />
+                                                    </a>
+                                                    <button className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                                                        <Share2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))}
 
                     {/* Loading skeleton for pending generation — at the bottom */}
                     {isGenerating && Array.from({ length: pendingCount || 1 }).map((_, i) => (
-                        <div key={`skeleton-${i}`} className="flex gap-4">
-                            <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 w-64 aspect-[2/3] animate-pulse shrink-0">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
-                                        <span className="text-emerald-400 text-sm font-medium">Generating...</span>
+                        <div key={`skeleton-${i}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                                <p className="text-gray-600 text-xs">Generating...</p>
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 w-56 aspect-[2/3] animate-pulse shrink-0">
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+                                            <span className="text-emerald-400 text-sm font-medium">Generating...</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

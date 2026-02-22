@@ -21,6 +21,7 @@ export interface GenerationRecord {
     media_type: 'image' | 'video';
     prompt: string;
     model_id: number;
+    batch_id?: string;  // Groups images from the same generation together
 }
 
 /**
@@ -45,3 +46,4 @@ export async function saveGeneration(
 
     return data.id;
 }
+

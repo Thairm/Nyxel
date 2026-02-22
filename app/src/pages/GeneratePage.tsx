@@ -35,6 +35,7 @@ export interface GeneratedItem {
   prompt: string;
   modelId: number;
   createdAt: string;
+  batchId: string;  // Groups images from the same generation together
 }
 
 // Items currently being polled (not yet completed)
@@ -100,7 +101,7 @@ export default function GeneratePage() {
     const loadHistory = async () => {
       const { data, error } = await supabase
         .from('generations')
-        .select('id, media_url, media_type, prompt, model_id, created_at')
+        .select('id, media_url, media_type, prompt, model_id, created_at, batch_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -113,6 +114,7 @@ export default function GeneratePage() {
           prompt: row.prompt,
           modelId: row.model_id,
           createdAt: row.created_at,
+          batchId: row.batch_id || row.id,  // fallback to id for old records without batch_id
         })));
       }
     };
@@ -175,6 +177,7 @@ export default function GeneratePage() {
             completedIds.push(job.id);
 
             if (data.mediaUrl) {
+              const syncBatchId = data.batchId || crypto.randomUUID();
               newItems.push({
                 id: data.generationId || crypto.randomUUID(),
                 mediaUrl: data.mediaUrl,
@@ -182,10 +185,12 @@ export default function GeneratePage() {
                 prompt: job.prompt,
                 modelId: job.modelId,
                 createdAt: new Date().toISOString(),
+                batchId: syncBatchId,
               });
             }
 
             if (data.results) {
+              const batchId = data.batchId || crypto.randomUUID();
               for (const r of data.results) {
                 if (r.mediaUrl) {
                   newItems.push({
@@ -195,6 +200,7 @@ export default function GeneratePage() {
                     prompt: job.prompt,
                     modelId: job.modelId,
                     createdAt: new Date().toISOString(),
+                    batchId: batchId,
                   });
                 }
               }
@@ -309,6 +315,7 @@ export default function GeneratePage() {
           prompt: prompt,
           modelId: selectedModel.id,
           createdAt: new Date().toISOString(),
+          batchId: data.batchId || crypto.randomUUID(),
         }, ...prev]);
         setIsGenerating(false);
         return;

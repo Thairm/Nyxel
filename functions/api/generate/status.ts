@@ -197,6 +197,9 @@ export async function onRequestGet(context: any) {
             console.log('[STATUS] All CivitAI jobs completed! Jobs:', jobs.length);
             const completedResults: Array<{ mediaUrl: string; generationId: string | null }> = [];
 
+            // Use the CivitAI token as the batch_id — all images from this generation share it
+            const batchId = token;
+
             for (const job of jobs) {
                 // CivitAI result is an ARRAY of items, each with blobUrl
                 const resultItems = Array.isArray(job.result) ? job.result : (job.result ? [job.result] : []);
@@ -218,6 +221,7 @@ export async function onRequestGet(context: any) {
                                 media_type: 'image',
                                 prompt: prompt,
                                 model_id: modelId,
+                                batch_id: batchId,
                             });
                         } catch (dbError: any) {
                             console.error('Supabase save failed (non-fatal):', dbError.message);
@@ -231,6 +235,7 @@ export async function onRequestGet(context: any) {
             return new Response(JSON.stringify({
                 status: 'completed',
                 results: completedResults,
+                batchId: batchId,
                 provider: 'civitai',
             }), {
                 headers: { "Content-Type": "application/json" },
