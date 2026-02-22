@@ -100,9 +100,11 @@ export async function onRequestPost(context: any) {
             }
 
             const data = await response.json();
+            console.log('[ATLAS] Nano Banana Pro response:', JSON.stringify(data).substring(0, 1000));
 
             // Sync mode: image is ready — upload to B2 and save to Supabase
             const tempUrl = extractAtlasImageUrl(data);
+            console.log('[ATLAS] Extracted URL:', tempUrl ? tempUrl.substring(0, 200) : 'NULL — URL extraction failed!');
             if (tempUrl) {
                 const fileName = generateFileName(userId || 'anonymous');
                 const permanentUrl = await downloadAndUploadToB2(env, tempUrl, fileName, 'image/png');
