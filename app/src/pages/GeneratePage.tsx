@@ -39,16 +39,19 @@ export interface GeneratedItem {
 
 // Items currently being polled (not yet completed)
 interface PendingJob {
+  id: string;         // unique ID for this pending job
   provider: 'atlas' | 'civitai';
-  jobId?: string;   // Atlas Cloud
-  token?: string;    // CivitAI
+  jobId?: string;     // Atlas Cloud
+  token?: string;     // CivitAI
   prompt: string;
   modelId: number;
   mediaType: 'image' | 'video';
   userId: string;
+  errorCount: number; // track consecutive errors
 }
 
 const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_ERRORS = 10;
 
 export default function GeneratePage() {
   const { mode } = useParams<{ mode: string }>();
@@ -76,12 +79,13 @@ export default function GeneratePage() {
     selectedModel.defaultVariant
   );
 
-  // Generated items (completed)
+  // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
 
-  // Pending jobs being polled
-  const pendingJobsRef = useRef<PendingJob[]>([]);
+  // Pending jobs — tracked as state so UI re-renders when jobs are added/removed  
+  const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPollingRef = useRef(false); // prevent concurrent polls
 
   // Load generation history from Supabase on mount
   useEffect(() => {
@@ -110,77 +114,148 @@ export default function GeneratePage() {
     loadHistory();
   }, [user?.id]);
 
-  // Polling loop
+  // Polling loop — runs every 3s when there are pending jobs
   const pollPendingJobs = useCallback(async () => {
-    const jobs = [...pendingJobsRef.current];
-    if (jobs.length === 0) {
-      // Stop polling when no pending jobs
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-      setIsGenerating(false);
-      return;
-    }
+    // Prevent concurrent polls
+    if (isPollingRef.current) return;
+    isPollingRef.current = true;
 
-    for (const job of jobs) {
-      try {
-        const params = new URLSearchParams({
-          provider: job.provider,
-          prompt: job.prompt,
-          modelId: String(job.modelId),
-          mediaType: job.mediaType,
-          userId: job.userId,
-        });
+    try {
+      setPendingJobs(currentJobs => {
+        // We can't do async inside setState, so we trigger the actual poll outside
+        return currentJobs;
+      });
 
-        if (job.jobId) params.set('jobId', job.jobId);
-        if (job.token) params.set('token', job.token);
+      // Read current pending jobs
+      let currentPending: PendingJob[] = [];
+      setPendingJobs(prev => { currentPending = prev; return prev; });
 
-        const response = await fetch(`/api/generate/status?${params.toString()}`);
-        const data = await response.json();
-
-        if (data.status === 'completed') {
-          // Remove from pending
-          pendingJobsRef.current = pendingJobsRef.current.filter(j => j !== job);
-
-          // Handle single result (Atlas) or multiple results (CivitAI)
-          if (data.mediaUrl) {
-            setGeneratedItems(prev => [{
-              id: data.generationId || crypto.randomUUID(),
-              mediaUrl: data.mediaUrl,
-              mediaType: job.mediaType,
-              prompt: job.prompt,
-              modelId: job.modelId,
-              createdAt: new Date().toISOString(),
-            }, ...prev]);
-          }
-
-          if (data.results) {
-            const newItems = data.results.map((r: any) => ({
-              id: r.generationId || crypto.randomUUID(),
-              mediaUrl: r.mediaUrl,
-              mediaType: job.mediaType,
-              prompt: job.prompt,
-              modelId: job.modelId,
-              createdAt: new Date().toISOString(),
-            }));
-            setGeneratedItems(prev => [...newItems, ...prev]);
-          }
-        } else if (data.status === 'failed') {
-          pendingJobsRef.current = pendingJobsRef.current.filter(j => j !== job);
-          console.error('Generation failed:', data.error);
+      if (currentPending.length === 0) {
+        if (pollTimerRef.current) {
+          clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
         }
-        // 'processing' — keep polling
-      } catch (err) {
-        console.error('Poll error:', err);
+        setIsGenerating(false);
+        isPollingRef.current = false;
+        return;
       }
+
+      const completedJobIds: string[] = [];
+      const failedJobIds: string[] = [];
+      const newItems: GeneratedItem[] = [];
+      const errorUpdates: { id: string; count: number }[] = [];
+
+      for (const job of currentPending) {
+        try {
+          const params = new URLSearchParams({
+            provider: job.provider,
+            prompt: job.prompt,
+            modelId: String(job.modelId),
+            mediaType: job.mediaType,
+            userId: job.userId,
+          });
+
+          if (job.jobId) params.set('jobId', job.jobId);
+          if (job.token) params.set('token', job.token);
+
+          const response = await fetch(`/api/generate/status?${params.toString()}`);
+
+          if (!response.ok) {
+            console.error(`[POLL] Status returned ${response.status} for job ${job.id}`);
+            errorUpdates.push({ id: job.id, count: job.errorCount + 1 });
+            if (job.errorCount + 1 >= MAX_POLL_ERRORS) {
+              failedJobIds.push(job.id);
+              console.error(`[POLL] Job ${job.id} failed after ${MAX_POLL_ERRORS} errors`);
+            }
+            continue;
+          }
+
+          const data = await response.json();
+          console.log(`[POLL] Job ${job.id} status:`, data.status);
+
+          if (data.status === 'completed') {
+            completedJobIds.push(job.id);
+
+            // Handle single result (Atlas Cloud)
+            if (data.mediaUrl) {
+              newItems.push({
+                id: data.generationId || crypto.randomUUID(),
+                mediaUrl: data.mediaUrl,
+                mediaType: job.mediaType,
+                prompt: job.prompt,
+                modelId: job.modelId,
+                createdAt: new Date().toISOString(),
+              });
+            }
+
+            // Handle multiple results (CivitAI)
+            if (data.results) {
+              for (const r of data.results) {
+                newItems.push({
+                  id: r.generationId || crypto.randomUUID(),
+                  mediaUrl: r.mediaUrl,
+                  mediaType: job.mediaType,
+                  prompt: job.prompt,
+                  modelId: job.modelId,
+                  createdAt: new Date().toISOString(),
+                });
+              }
+            }
+          } else if (data.status === 'failed') {
+            failedJobIds.push(job.id);
+            console.error('[POLL] Generation failed:', data.error);
+          }
+          // 'processing' — keep polling
+        } catch (err) {
+          console.error('[POLL] Error polling job:', job.id, err);
+          errorUpdates.push({ id: job.id, count: job.errorCount + 1 });
+          if (job.errorCount + 1 >= MAX_POLL_ERRORS) {
+            failedJobIds.push(job.id);
+          }
+        }
+      }
+
+      // Update state: remove completed/failed jobs
+      if (completedJobIds.length > 0 || failedJobIds.length > 0 || errorUpdates.length > 0) {
+        const removeIds = new Set([...completedJobIds, ...failedJobIds]);
+        setPendingJobs(prev => {
+          const updated = prev
+            .filter(j => !removeIds.has(j.id))
+            .map(j => {
+              const errUpdate = errorUpdates.find(e => e.id === j.id);
+              return errUpdate ? { ...j, errorCount: errUpdate.count } : j;
+            });
+
+          // If no more pending, stop polling
+          if (updated.length === 0) {
+            if (pollTimerRef.current) {
+              clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+            setIsGenerating(false);
+          }
+
+          return updated;
+        });
+      }
+
+      // Add new completed items
+      if (newItems.length > 0) {
+        setGeneratedItems(prev => [...newItems, ...prev]);
+      }
+    } finally {
+      isPollingRef.current = false;
     }
   }, []);
 
-  // Start/stop polling timer
+  // Start/stop polling timer when pendingJobs changes
   useEffect(() => {
-    if (pendingJobsRef.current.length > 0 && !pollTimerRef.current) {
+    if (pendingJobs.length > 0 && !pollTimerRef.current) {
       pollTimerRef.current = setInterval(pollPendingJobs, POLL_INTERVAL_MS);
+    }
+    if (pendingJobs.length === 0 && pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
     }
     return () => {
       if (pollTimerRef.current) {
@@ -188,7 +263,7 @@ export default function GeneratePage() {
         pollTimerRef.current = null;
       }
     };
-  }, [pollPendingJobs]);
+  }, [pendingJobs.length, pollPendingJobs]);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
@@ -244,6 +319,7 @@ export default function GeneratePage() {
       // CASE 2: Async result — need to poll
       if (data.status === 'processing') {
         const pendingJob: PendingJob = {
+          id: crypto.randomUUID(),
           provider: data.provider,
           jobId: data.jobId,
           token: data.token,
@@ -251,14 +327,10 @@ export default function GeneratePage() {
           modelId: selectedModel.id,
           mediaType: mediaType as 'image' | 'video',
           userId: user?.id || 'anonymous',
+          errorCount: 0,
         };
 
-        pendingJobsRef.current = [...pendingJobsRef.current, pendingJob];
-
-        // Start polling if not already running
-        if (!pollTimerRef.current) {
-          pollTimerRef.current = setInterval(pollPendingJobs, POLL_INTERVAL_MS);
-        }
+        setPendingJobs(prev => [...prev, pendingJob]);
         return;
       }
 
@@ -355,7 +427,7 @@ export default function GeneratePage() {
         <PreviewArea
           isGenerating={isGenerating}
           generatedItems={generatedItems}
-          pendingCount={pendingJobsRef.current.length}
+          pendingCount={pendingJobs.length}
         />
         <PromptBar
           prompt={prompt}
