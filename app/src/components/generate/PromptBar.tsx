@@ -18,7 +18,7 @@ export function PromptBar({ prompt, setPrompt, onGenerate, isGenerating }: Promp
             // Reset height to auto to get the correct scrollHeight
             textarea.style.height = 'auto';
             // Set height to scrollHeight, capped at max-height (handled by CSS)
-            textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
         }
     }, [prompt]);
 
@@ -51,7 +51,7 @@ export function PromptBar({ prompt, setPrompt, onGenerate, isGenerating }: Promp
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="What do you want to create?"
                     rows={1}
-                    className="flex-1 bg-transparent text-white placeholder:text-gray-400 outline-none text-sm min-w-0 font-medium px-2 py-1 resize-none overflow-y-auto scrollbar-thin max-h-[150px]"
+                    className="flex-1 bg-transparent text-white placeholder:text-gray-400 outline-none text-sm min-w-0 font-medium px-2 py-1 resize-none overflow-y-auto scrollbar-thin max-h-[120px]"
                 />
 
                 {/* Right Side Buttons */}

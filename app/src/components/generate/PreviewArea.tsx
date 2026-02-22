@@ -95,9 +95,9 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                             </div>
 
                             {/* Images row — side by side */}
-                            <div className="flex gap-3 flex-wrap">
+                            <div className="flex gap-3">
                                 {batch.items.map((item, index) => (
-                                    <div key={item.id} className="relative group w-56 shrink-0">
+                                    <div key={item.id} className="relative group flex-1 min-w-0">
                                         <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
                                             {item.mediaType === 'video' ? (
                                                 <>
@@ -161,7 +161,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                 <p className="text-gray-600 text-xs">Generating...</p>
                             </div>
                             <div className="flex gap-3">
-                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 w-56 aspect-[2/3] animate-pulse shrink-0">
+                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 flex-1 min-w-0 aspect-[2/3] animate-pulse">
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
