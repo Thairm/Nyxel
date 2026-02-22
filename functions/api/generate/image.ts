@@ -45,6 +45,7 @@ function generateFileName(userId: string): string {
  */
 function extractAtlasImageUrl(data: any): string | null {
     // Try common response fields
+    if (data.data?.outputs?.[0]) return data.data.outputs[0];  // Nano Banana Pro format
     if (data.output?.url) return data.output.url;
     if (data.output?.image_url) return data.output.image_url;
     if (data.output?.images?.[0]?.url) return data.output.images[0].url;
