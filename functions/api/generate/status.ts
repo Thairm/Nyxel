@@ -171,9 +171,18 @@ export async function onRequestGet(context: any) {
             console.log('[STATUS] CivitAI response:', JSON.stringify(jobStatus).substring(0, 500));
 
             // Check if any jobs are still processing
+            // NOTE: CivitAI returns result as an ARRAY, e.g. result: [{available: true, blobUrl: '...'}]
             const jobs = jobStatus.jobs || [];
-            const allCompleted = jobs.length > 0 && jobs.every((j: any) => j.result?.available === true);
-            const anyFailed = jobs.some((j: any) => j.scheduled === false && j.result?.available === false);
+            const allCompleted = jobs.length > 0 && jobs.every((j: any) => {
+                const results = Array.isArray(j.result) ? j.result : (j.result ? [j.result] : []);
+                return results.length > 0 && results.every((r: any) => r.available === true);
+            });
+            const anyFailed = jobs.some((j: any) => {
+                const results = Array.isArray(j.result) ? j.result : (j.result ? [j.result] : []);
+                return results.some((r: any) => r.available === false);
+            });
+
+            console.log('[STATUS] allCompleted:', allCompleted, 'anyFailed:', anyFailed, 'jobCount:', jobs.length);
 
             if (!allCompleted && !anyFailed) {
                 return new Response(JSON.stringify({
@@ -197,37 +206,42 @@ export async function onRequestGet(context: any) {
 
             // All completed — upload each result to B2
             console.log('[STATUS] All CivitAI jobs completed! Jobs:', jobs.length);
-            const results: Array<{ mediaUrl: string; generationId: string | null }> = [];
+            const completedResults: Array<{ mediaUrl: string; generationId: string | null }> = [];
 
             for (const job of jobs) {
-                const blobUrl = job.result?.blobUrl;
-                console.log('[STATUS] Job blobUrl:', blobUrl);
-                if (!blobUrl) continue;
+                // CivitAI result is an ARRAY of items, each with blobUrl
+                const resultItems = Array.isArray(job.result) ? job.result : (job.result ? [job.result] : []);
 
-                const fileName = generateFileName(userId || 'anonymous', 'image');
-                const permanentUrl = await downloadAndUploadToB2(env, blobUrl, fileName, 'image/png');
+                for (const resultItem of resultItems) {
+                    const blobUrl = resultItem?.blobUrl;
+                    console.log('[STATUS] Job blobUrl:', blobUrl);
+                    if (!blobUrl) continue;
 
-                let generationId = null;
-                if (userId && env.SUPABASE_SERVICE_KEY) {
-                    try {
-                        generationId = await saveGeneration(env.SUPABASE_SERVICE_KEY, {
-                            user_id: userId,
-                            media_url: permanentUrl,
-                            media_type: 'image',
-                            prompt: prompt,
-                            model_id: modelId,
-                        });
-                    } catch (dbError: any) {
-                        console.error('Supabase save failed (non-fatal):', dbError.message);
+                    const fileName = generateFileName(userId || 'anonymous', 'image');
+                    const permanentUrl = await downloadAndUploadToB2(env, blobUrl, fileName, 'image/png');
+
+                    let generationId = null;
+                    if (userId && env.SUPABASE_SERVICE_KEY) {
+                        try {
+                            generationId = await saveGeneration(env.SUPABASE_SERVICE_KEY, {
+                                user_id: userId,
+                                media_url: permanentUrl,
+                                media_type: 'image',
+                                prompt: prompt,
+                                model_id: modelId,
+                            });
+                        } catch (dbError: any) {
+                            console.error('Supabase save failed (non-fatal):', dbError.message);
+                        }
                     }
-                }
 
-                results.push({ mediaUrl: permanentUrl, generationId });
+                    completedResults.push({ mediaUrl: permanentUrl, generationId });
+                }
             }
 
             return new Response(JSON.stringify({
                 status: 'completed',
-                results,
+                results: completedResults,
                 provider: 'civitai',
             }), {
                 headers: { "Content-Type": "application/json" },
@@ -247,3 +261,4 @@ export async function onRequestGet(context: any) {
         });
     }
 }
+
