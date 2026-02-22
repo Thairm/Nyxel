@@ -39,15 +39,15 @@ export interface GeneratedItem {
 
 // Items currently being polled (not yet completed)
 interface PendingJob {
-  id: string;         // unique ID for this pending job
+  id: string;
   provider: 'atlas' | 'civitai';
-  jobId?: string;     // Atlas Cloud
-  token?: string;     // CivitAI
+  jobId?: string;
+  token?: string;
   prompt: string;
   modelId: number;
   mediaType: 'image' | 'video';
   userId: string;
-  errorCount: number; // track consecutive errors
+  errorCount: number;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -71,7 +71,6 @@ export default function GeneratePage() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Model and variant selection state
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
   );
@@ -82,10 +81,17 @@ export default function GeneratePage() {
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
 
-  // Pending jobs — tracked as state so UI re-renders when jobs are added/removed  
-  const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
+  // Pending jobs — useRef for synchronous polling access, useState for UI count
+  const pendingJobsRef = useRef<PendingJob[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isPollingRef = useRef(false); // prevent concurrent polls
+  const isPollingRef = useRef(false);
+
+  // Helper: update both ref and count state
+  const updatePendingJobs = useCallback((updater: (prev: PendingJob[]) => PendingJob[]) => {
+    pendingJobsRef.current = updater(pendingJobsRef.current);
+    setPendingCount(pendingJobsRef.current.length);
+  }, []);
 
   // Load generation history from Supabase on mount
   useEffect(() => {
@@ -114,23 +120,16 @@ export default function GeneratePage() {
     loadHistory();
   }, [user?.id]);
 
-  // Polling loop — runs every 3s when there are pending jobs
+  // Polling function
   const pollPendingJobs = useCallback(async () => {
-    // Prevent concurrent polls
     if (isPollingRef.current) return;
     isPollingRef.current = true;
 
     try {
-      setPendingJobs(currentJobs => {
-        // We can't do async inside setState, so we trigger the actual poll outside
-        return currentJobs;
-      });
+      const jobs = [...pendingJobsRef.current]; // synchronous read!
+      console.log('[POLL] Polling', jobs.length, 'jobs');
 
-      // Read current pending jobs
-      let currentPending: PendingJob[] = [];
-      setPendingJobs(prev => { currentPending = prev; return prev; });
-
-      if (currentPending.length === 0) {
+      if (jobs.length === 0) {
         if (pollTimerRef.current) {
           clearInterval(pollTimerRef.current);
           pollTimerRef.current = null;
@@ -140,12 +139,11 @@ export default function GeneratePage() {
         return;
       }
 
-      const completedJobIds: string[] = [];
-      const failedJobIds: string[] = [];
+      const completedIds: string[] = [];
+      const failedIds: string[] = [];
       const newItems: GeneratedItem[] = [];
-      const errorUpdates: { id: string; count: number }[] = [];
 
-      for (const job of currentPending) {
+      for (const job of jobs) {
         try {
           const params = new URLSearchParams({
             provider: job.provider,
@@ -158,25 +156,24 @@ export default function GeneratePage() {
           if (job.jobId) params.set('jobId', job.jobId);
           if (job.token) params.set('token', job.token);
 
+          console.log(`[POLL] Checking job ${job.id} (${job.provider})...`);
           const response = await fetch(`/api/generate/status?${params.toString()}`);
 
           if (!response.ok) {
-            console.error(`[POLL] Status returned ${response.status} for job ${job.id}`);
-            errorUpdates.push({ id: job.id, count: job.errorCount + 1 });
-            if (job.errorCount + 1 >= MAX_POLL_ERRORS) {
-              failedJobIds.push(job.id);
-              console.error(`[POLL] Job ${job.id} failed after ${MAX_POLL_ERRORS} errors`);
+            console.error(`[POLL] Status HTTP ${response.status} for job ${job.id}`);
+            job.errorCount++;
+            if (job.errorCount >= MAX_POLL_ERRORS) {
+              failedIds.push(job.id);
             }
             continue;
           }
 
           const data = await response.json();
-          console.log(`[POLL] Job ${job.id} status:`, data.status);
+          console.log(`[POLL] Job ${job.id} status: ${data.status}`, data);
 
           if (data.status === 'completed') {
-            completedJobIds.push(job.id);
+            completedIds.push(job.id);
 
-            // Handle single result (Atlas Cloud)
             if (data.mediaUrl) {
               newItems.push({
                 id: data.generationId || crypto.randomUUID(),
@@ -188,82 +185,82 @@ export default function GeneratePage() {
               });
             }
 
-            // Handle multiple results (CivitAI)
             if (data.results) {
               for (const r of data.results) {
-                newItems.push({
-                  id: r.generationId || crypto.randomUUID(),
-                  mediaUrl: r.mediaUrl,
-                  mediaType: job.mediaType,
-                  prompt: job.prompt,
-                  modelId: job.modelId,
-                  createdAt: new Date().toISOString(),
-                });
+                if (r.mediaUrl) {
+                  newItems.push({
+                    id: r.generationId || crypto.randomUUID(),
+                    mediaUrl: r.mediaUrl,
+                    mediaType: job.mediaType,
+                    prompt: job.prompt,
+                    modelId: job.modelId,
+                    createdAt: new Date().toISOString(),
+                  });
+                }
               }
             }
           } else if (data.status === 'failed') {
-            failedJobIds.push(job.id);
+            failedIds.push(job.id);
             console.error('[POLL] Generation failed:', data.error);
           }
           // 'processing' — keep polling
         } catch (err) {
-          console.error('[POLL] Error polling job:', job.id, err);
-          errorUpdates.push({ id: job.id, count: job.errorCount + 1 });
-          if (job.errorCount + 1 >= MAX_POLL_ERRORS) {
-            failedJobIds.push(job.id);
+          console.error(`[POLL] Error for job ${job.id}:`, err);
+          job.errorCount++;
+          if (job.errorCount >= MAX_POLL_ERRORS) {
+            failedIds.push(job.id);
           }
         }
       }
 
-      // Update state: remove completed/failed jobs
-      if (completedJobIds.length > 0 || failedJobIds.length > 0 || errorUpdates.length > 0) {
-        const removeIds = new Set([...completedJobIds, ...failedJobIds]);
-        setPendingJobs(prev => {
-          const updated = prev
-            .filter(j => !removeIds.has(j.id))
-            .map(j => {
-              const errUpdate = errorUpdates.find(e => e.id === j.id);
-              return errUpdate ? { ...j, errorCount: errUpdate.count } : j;
-            });
-
-          // If no more pending, stop polling
-          if (updated.length === 0) {
-            if (pollTimerRef.current) {
-              clearInterval(pollTimerRef.current);
-              pollTimerRef.current = null;
-            }
-            setIsGenerating(false);
-          }
-
-          return updated;
-        });
+      // Remove completed/failed jobs
+      const removeIds = new Set([...completedIds, ...failedIds]);
+      if (removeIds.size > 0) {
+        updatePendingJobs(prev => prev.filter(j => !removeIds.has(j.id)));
       }
 
-      // Add new completed items
+      // Add completed items
       if (newItems.length > 0) {
+        console.log('[POLL] Adding', newItems.length, 'new items');
         setGeneratedItems(prev => [...newItems, ...prev]);
+      }
+
+      // Check if we should stop polling
+      if (pendingJobsRef.current.length === 0) {
+        if (pollTimerRef.current) {
+          clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
+        }
+        setIsGenerating(false);
       }
     } finally {
       isPollingRef.current = false;
     }
-  }, []);
+  }, [updatePendingJobs]);
 
-  // Start/stop polling timer when pendingJobs changes
+  // Start polling when pending count changes
   useEffect(() => {
-    if (pendingJobs.length > 0 && !pollTimerRef.current) {
+    if (pendingCount > 0 && !pollTimerRef.current) {
+      console.log('[POLL] Starting poll timer, pending:', pendingCount);
       pollTimerRef.current = setInterval(pollPendingJobs, POLL_INTERVAL_MS);
     }
-    if (pendingJobs.length === 0 && pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
+    return () => {
+      if (pollTimerRef.current && pendingCount === 0) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [pendingCount, pollPendingJobs]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (pollTimerRef.current) {
         clearInterval(pollTimerRef.current);
         pollTimerRef.current = null;
       }
     };
-  }, [pendingJobs.length, pollPendingJobs]);
+  }, []);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
@@ -284,11 +281,11 @@ export default function GeneratePage() {
         }
       };
 
-      // Add variant ID for video models
       if (mode === 'video' && selectedVariantId) {
         requestBody.variantId = selectedVariantId;
       }
 
+      console.log('[GEN] Sending request:', endpoint, requestBody);
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -296,13 +293,13 @@ export default function GeneratePage() {
       });
 
       const data = await response.json();
-      console.log('Generation response:', data);
+      console.log('[GEN] Response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate');
       }
 
-      // CASE 1: Sync result — image is already uploaded to B2
+      // CASE 1: Sync result — image already in B2
       if (data.status === 'completed' && data.mediaUrl) {
         setGeneratedItems(prev => [{
           id: data.generationId || crypto.randomUUID(),
@@ -316,9 +313,9 @@ export default function GeneratePage() {
         return;
       }
 
-      // CASE 2: Async result — need to poll
+      // CASE 2: Async — add to pending and start polling
       if (data.status === 'processing') {
-        const pendingJob: PendingJob = {
+        const newJob: PendingJob = {
           id: crypto.randomUUID(),
           provider: data.provider,
           jobId: data.jobId,
@@ -330,16 +327,17 @@ export default function GeneratePage() {
           errorCount: 0,
         };
 
-        setPendingJobs(prev => [...prev, pendingJob]);
+        console.log('[GEN] Adding pending job:', newJob.id, newJob.provider);
+        updatePendingJobs(prev => [...prev, newJob]);
+        // polling starts automatically via useEffect on pendingCount
         return;
       }
 
-      // Unhandled response
       setIsGenerating(false);
-      console.warn('Unexpected response:', data);
+      console.warn('[GEN] Unexpected response:', data);
 
     } catch (err) {
-      console.error(err);
+      console.error('[GEN] Error:', err);
       alert('Error generating: ' + (err as Error).message);
       setIsGenerating(false);
     }
@@ -347,18 +345,10 @@ export default function GeneratePage() {
 
   return (
     <div className="min-h-screen bg-[#0D0F0E] flex">
-      {/* Left Sidebar with Labels */}
       <aside className="w-16 bg-[#0D0F0E] border-r border-white/5 flex flex-col items-center py-4 fixed left-0 top-0 h-full z-50">
-        {/* Logo */}
         <Link to="/" className="mb-4">
-          <img
-            src="/new logo.png"
-            alt="Nyxel Logo"
-            className="w-10 h-10 object-contain"
-          />
+          <img src="/new logo.png" alt="Nyxel Logo" className="w-10 h-10 object-contain" />
         </Link>
-
-        {/* Navigation with Labels */}
         <nav className="flex-1 flex flex-col gap-1 w-full px-1">
           {navItems.map((item) => {
             const isActive = (isVideoMode && item.label === 'Video') || (!isVideoMode && item.label === 'Image');
@@ -377,8 +367,6 @@ export default function GeneratePage() {
             );
           })}
         </nav>
-
-        {/* Bottom icons */}
         <div className="flex flex-col gap-2 w-full px-1">
           <button className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all">
             <Zap className="w-5 h-5" />
@@ -393,7 +381,6 @@ export default function GeneratePage() {
         </div>
       </aside>
 
-      {/* Settings Panel */}
       <SettingsPanel
         mode={mode || 'image'}
         generationMode={generationMode}
@@ -422,12 +409,11 @@ export default function GeneratePage() {
         setSelectedVariantId={setSelectedVariantId}
       />
 
-      {/* Main Content Area */}
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">
         <PreviewArea
           isGenerating={isGenerating}
           generatedItems={generatedItems}
-          pendingCount={pendingJobs.length}
+          pendingCount={pendingCount}
         />
         <PromptBar
           prompt={prompt}
@@ -437,28 +423,13 @@ export default function GeneratePage() {
         />
       </main>
 
-      {/* Custom scrollbar styles */}
       <style>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #2A2E2C;
-          border-radius: 3px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: #3A3E3C;
-          border-color: #3A3E3C;
-        }
-        .scrollbar-thin::-webkit-scrollbar-corner {
-          background: transparent;
-        }
-      `}
-      </style>
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #2A2E2C; border-radius: 3px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #3A3E3C; }
+        .scrollbar-thin::-webkit-scrollbar-corner { background: transparent; }
+      `}</style>
     </div>
   );
 }
