@@ -97,7 +97,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                             {/* Images row — side by side */}
                             <div className="flex gap-3">
                                 {batch.items.map((item, index) => (
-                                    <div key={item.id} className="relative group w-60">
+                                    <div key={item.id} className="relative group w-[360px] shrink-0">
                                         <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
                                             {item.mediaType === 'video' ? (
                                                 <>
@@ -127,7 +127,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                                 <img
                                                     src={item.mediaUrl}
                                                     alt={item.prompt || `Generated ${index + 1}`}
-                                                    className="w-full h-auto object-cover"
+                                                    className="w-full h-auto"
                                                     loading="lazy"
                                                 />
                                             )}
@@ -161,7 +161,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                 <p className="text-gray-600 text-xs">Generating...</p>
                             </div>
                             <div className="flex gap-3">
-                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 w-60 aspect-[2/3] animate-pulse">
+                                <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 w-[360px] aspect-[2/3] animate-pulse shrink-0">
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
