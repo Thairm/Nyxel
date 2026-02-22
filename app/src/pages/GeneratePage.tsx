@@ -274,6 +274,7 @@ export default function GeneratePage() {
         modelId: selectedModel.id,
         prompt,
         userId: user?.id || null,
+        quantity: mode === 'video' ? 1 : imageQuantity,
         params: {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,

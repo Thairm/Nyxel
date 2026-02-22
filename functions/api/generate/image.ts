@@ -16,6 +16,20 @@ function ratioToWanSize(ratio: string): string {
     return sizeMap[ratio] || '1280*1280';
 }
 
+// Helper: Map frontend aspect ratio to SDXL pixel dimensions
+function ratioToSDXLDimensions(ratio: string): { width: number; height: number } {
+    const dimensionMap: Record<string, { width: number; height: number }> = {
+        '1:1': { width: 1024, height: 1024 },
+        '2:3': { width: 832, height: 1216 },
+        '3:2': { width: 1216, height: 832 },
+        '3:4': { width: 896, height: 1152 },
+        '4:3': { width: 1152, height: 896 },
+        '9:16': { width: 768, height: 1344 },
+        '16:9': { width: 1344, height: 768 },
+    };
+    return dimensionMap[ratio] || { width: 1024, height: 1024 };
+}
+
 /**
  * Generate a unique filename for B2 storage.
  */
@@ -47,7 +61,7 @@ export async function onRequestPost(context: any) {
 
     try {
         const body = await request.json();
-        const { modelId, prompt, params, userId } = body;
+        const { modelId, prompt, params, userId, quantity } = body;
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: "Prompt is required" }), {
@@ -314,6 +328,13 @@ export async function onRequestPost(context: any) {
             const civitai = getCivitaiClient(apiToken);
 
             try {
+                // Resolve aspect ratio to SDXL pixel dimensions
+                const ratio = params?.ratio || params?.aspect_ratio || '1:1';
+                const dimensions = ratioToSDXLDimensions(ratio);
+                const imageQuantity = Math.min(Math.max(quantity || 1, 1), 4); // 1-4 images
+
+                console.log('[CIVITAI] Generating', imageQuantity, 'images at', dimensions.width, 'x', dimensions.height, 'ratio:', ratio);
+
                 // Don't wait (pass false/omit second arg) — get the token for polling
                 const generationResult = await civitai.image.fromText({
                     model: modelUrn,
@@ -323,11 +344,12 @@ export async function onRequestPost(context: any) {
                         scheduler: params?.scheduler || Scheduler.EULER_A,
                         steps: params?.steps || 30,
                         cfgScale: params?.cfgScale || 7,
-                        width: params?.width || 512,
-                        height: params?.height || 512,
+                        width: dimensions.width,
+                        height: dimensions.height,
                         seed: params?.seed || -1,
                         clipSkip: params?.clipSkip || 2,
-                    }
+                    },
+                    quantity: imageQuantity,
                 });
 
                 // CivitAI returns { token, jobs: [...] }

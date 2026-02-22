@@ -6,8 +6,7 @@ import {
     ChevronDown,
     LayoutTemplate,
     Zap,
-    Info,
-    Layers
+    Info
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -16,13 +15,15 @@ import { hasVariants, getVariantById } from '@/data/modelData';
 import type { Model } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 
-// Aspect ratio options
+// Aspect ratio options with SDXL pixel dimensions
 const aspectRatios = [
-    { id: '2:3', label: '2:3', width: 40, height: 60 },
-    { id: '1:1', label: '1:1', width: 40, height: 40 },
-    { id: '9:16', label: '9:16', width: 30, height: 60 },
-    { id: '4:3', label: '4:3', width: 50, height: 40 },
-    { id: 'more', label: 'More', icon: Layers },
+    { id: '1:1', label: '1:1', width: 40, height: 40, pixels: '1024 × 1024' },
+    { id: '2:3', label: '2:3', width: 32, height: 48, pixels: '832 × 1216' },
+    { id: '3:2', label: '3:2', width: 48, height: 32, pixels: '1216 × 832' },
+    { id: '3:4', label: '3:4', width: 36, height: 48, pixels: '896 × 1152' },
+    { id: '4:3', label: '4:3', width: 48, height: 36, pixels: '1152 × 896' },
+    { id: '9:16', label: '9:16', width: 28, height: 50, pixels: '768 × 1344' },
+    { id: '16:9', label: '16:9', width: 50, height: 28, pixels: '1344 × 768' },
 ];
 
 // Image quantity options
@@ -218,7 +219,7 @@ export function SettingsPanel({
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                         </div>
-                        
+
                         {/* Variant Description */}
                         {currentVariant?.description && (
                             <p className="text-gray-600 text-[10px] mt-2">
@@ -355,7 +356,9 @@ export function SettingsPanel({
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-gray-400 text-xs">Image Settings</span>
-                                        <span className="text-gray-600 text-xs">688 × 1024</span>
+                                        <span className="text-gray-600 text-xs">
+                                            {aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024'}
+                                        </span>
                                     </div>
                                     <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
                                         {aspectRatios.map((ratio) => (
@@ -367,15 +370,11 @@ export function SettingsPanel({
                                                     : 'bg-[#141816] border border-white/5 hover:border-white/10'
                                                     }`}
                                             >
-                                                {ratio.icon ? (
-                                                    <ratio.icon className="w-4 h-4 text-gray-400" />
-                                                ) : (
-                                                    <div
-                                                        className={`border-2 rounded ${selectedRatio === ratio.id ? 'border-emerald-400' : 'border-gray-500'
-                                                            }`}
-                                                        style={{ width: ratio.width, height: ratio.height }}
-                                                    />
-                                                )}
+                                                <div
+                                                    className={`border-2 rounded ${selectedRatio === ratio.id ? 'border-emerald-400' : 'border-gray-500'
+                                                        }`}
+                                                    style={{ width: ratio.width, height: ratio.height }}
+                                                />
                                                 <span className={`text-[10px] ${selectedRatio === ratio.id ? 'text-emerald-400' : 'text-gray-500'}`}>
                                                     {ratio.label}
                                                 </span>
