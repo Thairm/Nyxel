@@ -21,6 +21,7 @@ export async function onRequestGet(context: any) {
 
     try {
         const url = new URL(request.url);
+        console.log('[STATUS] Polling request:', url.search);
         const provider = url.searchParams.get('provider'); // 'atlas' or 'civitai'
         const jobId = url.searchParams.get('jobId');       // Atlas Cloud job ID
         const token = url.searchParams.get('token');       // CivitAI token
@@ -163,9 +164,11 @@ export async function onRequestGet(context: any) {
             const apiToken = env.CIVITAI_API_TOKEN;
             if (!apiToken) throw new Error("Missing CIVITAI_API_TOKEN");
 
+            console.log('[STATUS] Checking CivitAI token:', token);
             const civitai = getCivitaiClient(apiToken);
 
             const jobStatus = await civitai.jobs.getByToken(token);
+            console.log('[STATUS] CivitAI response:', JSON.stringify(jobStatus).substring(0, 500));
 
             // Check if any jobs are still processing
             const jobs = jobStatus.jobs || [];
@@ -193,10 +196,12 @@ export async function onRequestGet(context: any) {
             }
 
             // All completed — upload each result to B2
+            console.log('[STATUS] All CivitAI jobs completed! Jobs:', jobs.length);
             const results: Array<{ mediaUrl: string; generationId: string | null }> = [];
 
             for (const job of jobs) {
                 const blobUrl = job.result?.blobUrl;
+                console.log('[STATUS] Job blobUrl:', blobUrl);
                 if (!blobUrl) continue;
 
                 const fileName = generateFileName(userId || 'anonymous', 'image');
