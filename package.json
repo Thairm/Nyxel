@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "aws4fetch": "^1.0.20",
     "civitai": "^0.1.15"
   }
