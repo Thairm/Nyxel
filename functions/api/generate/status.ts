@@ -170,35 +170,24 @@ export async function onRequestGet(context: any) {
             const jobStatus = await civitai.jobs.getByToken(token);
             console.log('[STATUS] CivitAI response:', JSON.stringify(jobStatus).substring(0, 500));
 
-            // Check if any jobs are still processing
+            // Check if all jobs have completed
             // NOTE: CivitAI returns result as an ARRAY, e.g. result: [{available: true, blobUrl: '...'}]
+            // available: false means STILL PROCESSING (not failed!)
+            // available: true means DONE
             const jobs = jobStatus.jobs || [];
             const allCompleted = jobs.length > 0 && jobs.every((j: any) => {
                 const results = Array.isArray(j.result) ? j.result : (j.result ? [j.result] : []);
                 return results.length > 0 && results.every((r: any) => r.available === true);
             });
-            const anyFailed = jobs.some((j: any) => {
-                const results = Array.isArray(j.result) ? j.result : (j.result ? [j.result] : []);
-                return results.some((r: any) => r.available === false);
-            });
 
-            console.log('[STATUS] allCompleted:', allCompleted, 'anyFailed:', anyFailed, 'jobCount:', jobs.length);
+            console.log('[STATUS] allCompleted:', allCompleted, 'jobCount:', jobs.length);
 
-            if (!allCompleted && !anyFailed) {
+            // Not done yet — keep polling
+            if (!allCompleted) {
                 return new Response(JSON.stringify({
                     status: 'processing',
                     provider: 'civitai',
                     jobCount: jobs.length,
-                }), {
-                    headers: { "Content-Type": "application/json" },
-                });
-            }
-
-            if (anyFailed && !allCompleted) {
-                return new Response(JSON.stringify({
-                    status: 'failed',
-                    error: 'One or more CivitAI jobs failed',
-                    provider: 'civitai',
                 }), {
                     headers: { "Content-Type": "application/json" },
                 });
