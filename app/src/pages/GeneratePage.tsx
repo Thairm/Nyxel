@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Image,
   Video,
@@ -14,6 +14,8 @@ import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
 import { getDefaultModel, type Model } from '@/data/modelData';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 
 // Navigation items for left sidebar with labels
 const navItems = [
@@ -26,9 +28,32 @@ const navItems = [
   { icon: MoreHorizontal, label: 'More', path: '#' },
 ];
 
+export interface GeneratedItem {
+  id: string;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  prompt: string;
+  modelId: number;
+  createdAt: string;
+}
+
+// Items currently being polled (not yet completed)
+interface PendingJob {
+  provider: 'atlas' | 'civitai';
+  jobId?: string;   // Atlas Cloud
+  token?: string;    // CivitAI
+  prompt: string;
+  modelId: number;
+  mediaType: 'image' | 'video';
+  userId: string;
+}
+
+const POLL_INTERVAL_MS = 3000;
+
 export default function GeneratePage() {
   const { mode } = useParams<{ mode: string }>();
   const isVideoMode = mode === 'video';
+  const { user } = useAuth();
 
   const [generationMode, setGenerationMode] = useState<'standard' | 'quality'>('standard');
   const [selectedRatio, setSelectedRatio] = useState('2:3');
@@ -51,16 +76,132 @@ export default function GeneratePage() {
     selectedModel.defaultVariant
   );
 
+  // Generated items (completed)
+  const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
+
+  // Pending jobs being polled
+  const pendingJobsRef = useRef<PendingJob[]>([]);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Load generation history from Supabase on mount
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const loadHistory = async () => {
+      const { data, error } = await supabase
+        .from('generations')
+        .select('id, media_url, media_type, prompt, model_id, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (data && !error) {
+        setGeneratedItems(data.map((row: any) => ({
+          id: row.id,
+          mediaUrl: row.media_url,
+          mediaType: row.media_type,
+          prompt: row.prompt,
+          modelId: row.model_id,
+          createdAt: row.created_at,
+        })));
+      }
+    };
+
+    loadHistory();
+  }, [user?.id]);
+
+  // Polling loop
+  const pollPendingJobs = useCallback(async () => {
+    const jobs = [...pendingJobsRef.current];
+    if (jobs.length === 0) {
+      // Stop polling when no pending jobs
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      setIsGenerating(false);
+      return;
+    }
+
+    for (const job of jobs) {
+      try {
+        const params = new URLSearchParams({
+          provider: job.provider,
+          prompt: job.prompt,
+          modelId: String(job.modelId),
+          mediaType: job.mediaType,
+          userId: job.userId,
+        });
+
+        if (job.jobId) params.set('jobId', job.jobId);
+        if (job.token) params.set('token', job.token);
+
+        const response = await fetch(`/api/generate/status?${params.toString()}`);
+        const data = await response.json();
+
+        if (data.status === 'completed') {
+          // Remove from pending
+          pendingJobsRef.current = pendingJobsRef.current.filter(j => j !== job);
+
+          // Handle single result (Atlas) or multiple results (CivitAI)
+          if (data.mediaUrl) {
+            setGeneratedItems(prev => [{
+              id: data.generationId || crypto.randomUUID(),
+              mediaUrl: data.mediaUrl,
+              mediaType: job.mediaType,
+              prompt: job.prompt,
+              modelId: job.modelId,
+              createdAt: new Date().toISOString(),
+            }, ...prev]);
+          }
+
+          if (data.results) {
+            const newItems = data.results.map((r: any) => ({
+              id: r.generationId || crypto.randomUUID(),
+              mediaUrl: r.mediaUrl,
+              mediaType: job.mediaType,
+              prompt: job.prompt,
+              modelId: job.modelId,
+              createdAt: new Date().toISOString(),
+            }));
+            setGeneratedItems(prev => [...newItems, ...prev]);
+          }
+        } else if (data.status === 'failed') {
+          pendingJobsRef.current = pendingJobsRef.current.filter(j => j !== job);
+          console.error('Generation failed:', data.error);
+        }
+        // 'processing' — keep polling
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }
+  }, []);
+
+  // Start/stop polling timer
+  useEffect(() => {
+    if (pendingJobsRef.current.length > 0 && !pollTimerRef.current) {
+      pollTimerRef.current = setInterval(pollPendingJobs, POLL_INTERVAL_MS);
+    }
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [pollPendingJobs]);
+
   const handleGenerate = async () => {
     if (!prompt.trim() || isGenerating) return;
 
     setIsGenerating(true);
     try {
       const endpoint = mode === 'video' ? '/api/generate/video' : '/api/generate/image';
+      const mediaType = mode === 'video' ? 'video' : 'image';
 
       const requestBody: any = {
         modelId: selectedModel.id,
         prompt,
+        userId: user?.id || null,
         params: {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,
@@ -86,12 +227,48 @@ export default function GeneratePage() {
         throw new Error(data.error || 'Failed to generate');
       }
 
-      // TODO: Handle success (job ID polling vs immediate result)
-      // If it returns a job ID: start polling /api/generate/status
+      // CASE 1: Sync result — image is already uploaded to B2
+      if (data.status === 'completed' && data.mediaUrl) {
+        setGeneratedItems(prev => [{
+          id: data.generationId || crypto.randomUUID(),
+          mediaUrl: data.mediaUrl,
+          mediaType: mediaType as 'image' | 'video',
+          prompt: prompt,
+          modelId: selectedModel.id,
+          createdAt: new Date().toISOString(),
+        }, ...prev]);
+        setIsGenerating(false);
+        return;
+      }
+
+      // CASE 2: Async result — need to poll
+      if (data.status === 'processing') {
+        const pendingJob: PendingJob = {
+          provider: data.provider,
+          jobId: data.jobId,
+          token: data.token,
+          prompt: prompt,
+          modelId: selectedModel.id,
+          mediaType: mediaType as 'image' | 'video',
+          userId: user?.id || 'anonymous',
+        };
+
+        pendingJobsRef.current = [...pendingJobsRef.current, pendingJob];
+
+        // Start polling if not already running
+        if (!pollTimerRef.current) {
+          pollTimerRef.current = setInterval(pollPendingJobs, POLL_INTERVAL_MS);
+        }
+        return;
+      }
+
+      // Unhandled response
+      setIsGenerating(false);
+      console.warn('Unexpected response:', data);
+
     } catch (err) {
       console.error(err);
       alert('Error generating: ' + (err as Error).message);
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -175,7 +352,11 @@ export default function GeneratePage() {
 
       {/* Main Content Area */}
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">
-        <PreviewArea isGenerating={isGenerating} />
+        <PreviewArea
+          isGenerating={isGenerating}
+          generatedItems={generatedItems}
+          pendingCount={pendingJobsRef.current.length}
+        />
         <PromptBar
           prompt={prompt}
           setPrompt={setPrompt}
@@ -204,7 +385,8 @@ export default function GeneratePage() {
         .scrollbar-thin::-webkit-scrollbar-corner {
           background: transparent;
         }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }

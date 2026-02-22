@@ -297,14 +297,31 @@ export async function onRequestPost(context: any) {
             throw new Error(errorData.error || errorData.message || `Atlas Cloud API error: ${response.status}`);
         }
 
-        const data = await response.json();
+        const data = await response.json() as any;
 
+        // All video models are async — return job ID for frontend polling
+        // The frontend will poll /api/generate/status?provider=atlas&jobId=xxx
+        const jobId = data.id || data.job_id || data.request_id;
+
+        if (jobId) {
+            return new Response(JSON.stringify({
+                status: 'processing',
+                jobId: jobId,
+                provider: 'atlas',
+                model: modelId,
+                variant: selectedVariant,
+            }), {
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+
+        // Fallback: return raw data if no job ID found
         return new Response(JSON.stringify({
-            success: true,
+            status: 'unknown',
             model: modelId,
             variant: selectedVariant,
             apiModel: apiModelName,
-            generation: data
+            rawResponse: data,
         }), {
             headers: { "Content-Type": "application/json" }
         });
