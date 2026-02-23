@@ -103,22 +103,39 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                                 <>
                                                     <video
                                                         src={item.mediaUrl}
-                                                        className="w-full h-auto object-cover"
+                                                        className="w-full h-auto object-cover cursor-pointer"
                                                         muted
                                                         loop
+                                                        playsInline
+                                                        preload="metadata"
+                                                        onClick={(e) => {
+                                                            const v = e.target as HTMLVideoElement;
+                                                            if (v.paused) {
+                                                                v.play();
+                                                                // Hide play button
+                                                                const playBtn = v.parentElement?.querySelector('.play-overlay') as HTMLElement;
+                                                                if (playBtn) playBtn.style.display = 'none';
+                                                            } else {
+                                                                v.pause();
+                                                                const playBtn = v.parentElement?.querySelector('.play-overlay') as HTMLElement;
+                                                                if (playBtn) playBtn.style.display = 'flex';
+                                                            }
+                                                        }}
                                                         onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                                                         onMouseLeave={(e) => {
                                                             const v = e.target as HTMLVideoElement;
                                                             v.pause();
                                                             v.currentTime = 0;
+                                                            const playBtn = v.parentElement?.querySelector('.play-overlay') as HTMLElement;
+                                                            if (playBtn) playBtn.style.display = 'flex';
                                                         }}
                                                     />
-                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:hidden">
+                                                    <div className="play-overlay absolute inset-0 flex items-center justify-center pointer-events-none">
                                                         <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
                                                             <Play className="w-5 h-5 text-white fill-white" />
                                                         </div>
                                                     </div>
-                                                    <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 flex items-center gap-1">
+                                                    <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 flex items-center gap-1 pointer-events-none">
                                                         <Video className="w-3 h-3 text-white" />
                                                         <span className="text-white text-[10px]">Video</span>
                                                     </div>
