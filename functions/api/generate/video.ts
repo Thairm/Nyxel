@@ -301,7 +301,11 @@ export async function onRequestPost(context: any) {
             throw new Error(errorData.error || errorData.message || `Atlas Cloud API error: ${response.status}`);
         }
 
-        const data = await response.json() as any;
+        const rawData = await response.json() as any;
+        console.log('[VIDEO] Atlas Cloud response:', JSON.stringify(rawData).substring(0, 500));
+
+        // Atlas Cloud wraps responses: {code: 200, data: {id, status, ...}}
+        const data = rawData.data || rawData;
 
         // All video models are async — return job ID for frontend polling
         // The frontend will poll /api/generate/status?provider=atlas&jobId=xxx
