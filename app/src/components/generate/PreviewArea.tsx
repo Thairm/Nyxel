@@ -150,8 +150,8 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                             )}
 
                                             {/* Hover Overlay */}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                                <div className="flex gap-1.5">
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 pointer-events-none">
+                                                <div className="flex gap-1.5 pointer-events-auto">
                                                     <a
                                                         href={item.mediaUrl}
                                                         download
