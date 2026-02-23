@@ -62,8 +62,12 @@ export async function onRequestGet(context: any) {
                 throw new Error(errData.error || `Atlas status check failed: ${statusResponse.status}`);
             }
 
-            const statusData = await statusResponse.json() as any;
-            console.log('[STATUS] Atlas poll response:', JSON.stringify(statusData).substring(0, 500));
+            const rawStatusData = await statusResponse.json() as any;
+            console.log('[STATUS] Atlas poll raw response:', JSON.stringify(rawStatusData).substring(0, 500));
+
+            // Atlas Cloud wraps responses: {code: 200, data: {status, outputs, ...}}
+            // Unwrap to get the actual status object
+            const statusData = rawStatusData.data || rawStatusData;
 
             // Job still processing
             if (statusData.status === 'processing' || statusData.status === 'starting' || statusData.status === 'in_queue' || statusData.status === 'created') {
@@ -88,9 +92,8 @@ export async function onRequestGet(context: any) {
 
             // Job completed — extract temp URL, upload to B2, save to Supabase
             if (statusData.status === 'completed' || statusData.status === 'success') {
-                // Atlas Cloud puts output in various places depending on model
-                const tempUrl = statusData.data?.outputs?.[0]  // Primary Atlas Cloud format
-                    || statusData.outputs?.[0]                  // Alternate unwrapped format
+                // After unwrapping, outputs are directly on statusData
+                const tempUrl = statusData.outputs?.[0]           // Atlas Cloud primary format
                     || statusData.output?.url
                     || statusData.output?.image_url
                     || statusData.output?.video_url
