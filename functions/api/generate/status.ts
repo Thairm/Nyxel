@@ -53,7 +53,7 @@ export async function onRequestGet(context: any) {
             const atlasKey = env.ATLAS_CLOUD_API_KEY;
             if (!atlasKey) throw new Error("Missing ATLAS_CLOUD_API_KEY");
 
-            const statusResponse = await fetch(`https://api.atlascloud.ai/api/v1/model/status/${jobId}`, {
+            const statusResponse = await fetch(`https://api.atlascloud.ai/api/v1/model/prediction/${jobId}`, {
                 headers: { "Authorization": `Bearer ${atlasKey}` },
             });
 
