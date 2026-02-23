@@ -269,7 +269,11 @@ export async function onRequestPost(context: any) {
             const validDurations = isFast ? validFastDurations : validProDurations;
 
             requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 6;
-            requestBody.generate_audio = params?.generate_audio ?? true;
+
+            // Audio sync: only include if user uploaded an audio file (future feature)
+            if (params?.audio) {
+                requestBody.audio = params.audio;
+            }
 
             if (selectedVariant.includes('i2v')) {
                 if (!params?.image) {
