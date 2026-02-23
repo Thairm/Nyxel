@@ -63,9 +63,10 @@ export async function onRequestGet(context: any) {
             }
 
             const statusData = await statusResponse.json() as any;
+            console.log('[STATUS] Atlas poll response:', JSON.stringify(statusData).substring(0, 500));
 
             // Job still processing
-            if (statusData.status === 'processing' || statusData.status === 'starting' || statusData.status === 'in_queue') {
+            if (statusData.status === 'processing' || statusData.status === 'starting' || statusData.status === 'in_queue' || statusData.status === 'created') {
                 return new Response(JSON.stringify({
                     status: 'processing',
                     provider: 'atlas',
@@ -88,12 +89,16 @@ export async function onRequestGet(context: any) {
             // Job completed — extract temp URL, upload to B2, save to Supabase
             if (statusData.status === 'completed' || statusData.status === 'success') {
                 // Atlas Cloud puts output in various places depending on model
-                const tempUrl = statusData.output?.url
+                const tempUrl = statusData.data?.outputs?.[0]  // Primary Atlas Cloud format
+                    || statusData.outputs?.[0]                  // Alternate unwrapped format
+                    || statusData.output?.url
                     || statusData.output?.image_url
                     || statusData.output?.video_url
                     || (statusData.output?.images && statusData.output.images[0]?.url)
                     || statusData.url
                     || statusData.image_url;
+
+                console.log('[STATUS] Atlas completed. Extracted URL:', tempUrl ? tempUrl.substring(0, 200) : 'NULL');
 
                 if (!tempUrl) {
                     return new Response(JSON.stringify({
