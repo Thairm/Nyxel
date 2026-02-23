@@ -28,6 +28,13 @@ const navItems = [
   { icon: MoreHorizontal, label: 'More', path: '#' },
 ];
 
+export interface GenerationSettings {
+  ratio?: string;
+  duration?: number;
+  variantId?: string;
+  resolution?: string;
+}
+
 export interface GeneratedItem {
   id: string;
   mediaUrl: string;
@@ -36,6 +43,7 @@ export interface GeneratedItem {
   modelId: number;
   createdAt: string;
   batchId: string;  // Groups images from the same generation together
+  settings?: GenerationSettings;
 }
 
 // Items currently being polled (not yet completed)
@@ -49,6 +57,7 @@ interface PendingJob {
   mediaType: 'image' | 'video';
   userId: string;
   errorCount: number;
+  settings?: GenerationSettings;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -186,6 +195,7 @@ export default function GeneratePage() {
                 modelId: job.modelId,
                 createdAt: new Date().toISOString(),
                 batchId: syncBatchId,
+                settings: job.settings,
               });
             }
 
@@ -201,6 +211,7 @@ export default function GeneratePage() {
                     modelId: job.modelId,
                     createdAt: new Date().toISOString(),
                     batchId: batchId,
+                    settings: job.settings,
                   });
                 }
               }
@@ -316,6 +327,12 @@ export default function GeneratePage() {
           modelId: selectedModel.id,
           createdAt: new Date().toISOString(),
           batchId: data.batchId || crypto.randomUUID(),
+          settings: {
+            ratio: selectedRatio,
+            duration: mode === 'video' ? videoDuration : undefined,
+            variantId: selectedVariantId,
+            resolution: mode === 'video' ? videoResolution : undefined,
+          },
         }, ...prev]);
         setIsGenerating(false);
         return;
@@ -333,6 +350,12 @@ export default function GeneratePage() {
           mediaType: mediaType as 'image' | 'video',
           userId: user?.id || 'anonymous',
           errorCount: 0,
+          settings: {
+            ratio: selectedRatio,
+            duration: mode === 'video' ? videoDuration : undefined,
+            variantId: selectedVariantId,
+            resolution: mode === 'video' ? videoResolution : undefined,
+          },
         };
 
         console.log('[GEN] Adding pending job:', newJob.id, newJob.provider);

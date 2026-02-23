@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
     Play,
     Download,
@@ -8,8 +9,11 @@ import {
     Maximize2,
     RefreshCw,
     ImageIcon,
+    Volume2,
+    VolumeX,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ContentDetailModal } from './ContentDetailModal';
 import type { GeneratedItem } from '@/pages/GeneratePage';
 
 interface PreviewAreaProps {
@@ -37,9 +41,18 @@ function groupByBatch(items: GeneratedItem[]): { batchId: string; items: Generat
 
 export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 0 }: PreviewAreaProps) {
     const hasContent = generatedItems.length > 0 || isGenerating;
+    const [selectedItem, setSelectedItem] = useState<GeneratedItem | null>(null);
+    // Track muted state per video by item id
+    const [mutedMap, setMutedMap] = useState<Record<string, boolean>>({});
 
     // Group by batch and reverse so oldest batches are at top, newest at bottom
     const batches = groupByBatch([...generatedItems].reverse());
+
+    const toggleMute = (itemId: string, videoEl: HTMLVideoElement) => {
+        const currentlyMuted = mutedMap[itemId] !== false; // default muted
+        setMutedMap(prev => ({ ...prev, [itemId]: !currentlyMuted }));
+        videoEl.muted = !currentlyMuted;
+    };
 
     return (
         <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
@@ -94,7 +107,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                 </span>
                             </div>
 
-                            {/* Images row — side by side */}
+                            {/* Items row — side by side */}
                             <div className="flex gap-3">
                                 {batch.items.map((item, index) => (
                                     <div key={item.id} className="relative group w-[360px] shrink-0">
@@ -126,6 +139,9 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                                             const v = e.target as HTMLVideoElement;
                                                             v.pause();
                                                             v.currentTime = 0;
+                                                            // Reset to muted on mouse leave
+                                                            v.muted = true;
+                                                            setMutedMap(prev => ({ ...prev, [item.id]: true }));
                                                             const playBtn = v.parentElement?.querySelector('.play-overlay') as HTMLElement;
                                                             if (playBtn) playBtn.style.display = 'flex';
                                                         }}
@@ -135,6 +151,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                                             <Play className="w-5 h-5 text-white fill-white" />
                                                         </div>
                                                     </div>
+                                                    {/* Video badge */}
                                                     <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 flex items-center gap-1 pointer-events-none">
                                                         <Video className="w-3 h-3 text-white" />
                                                         <span className="text-white text-[10px]">Video</span>
@@ -144,23 +161,56 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                                 <img
                                                     src={item.mediaUrl}
                                                     alt={item.prompt || `Generated ${index + 1}`}
-                                                    className="w-full h-auto"
+                                                    className="w-full h-auto cursor-pointer"
                                                     loading="lazy"
+                                                    onClick={() => setSelectedItem(item)}
                                                 />
                                             )}
 
                                             {/* Hover Overlay */}
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 pointer-events-none">
-                                                <div className="flex gap-1.5 pointer-events-auto">
-                                                    <a
-                                                        href={item.mediaUrl}
-                                                        download
+                                                <div className="flex gap-1.5 w-full justify-between pointer-events-auto">
+                                                    {/* Left side buttons */}
+                                                    <div className="flex gap-1.5">
+                                                        {/* Audio toggle — video only */}
+                                                        {item.mediaType === 'video' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const container = (e.currentTarget as HTMLElement).closest('.relative.group');
+                                                                    const videoEl = container?.querySelector('video');
+                                                                    if (videoEl) toggleMute(item.id, videoEl);
+                                                                }}
+                                                                className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                                                                title={mutedMap[item.id] !== false ? 'Unmute' : 'Mute'}
+                                                            >
+                                                                {mutedMap[item.id] !== false
+                                                                    ? <VolumeX className="w-3.5 h-3.5" />
+                                                                    : <Volume2 className="w-3.5 h-3.5" />
+                                                                }
+                                                            </button>
+                                                        )}
+                                                        <a
+                                                            href={item.mediaUrl}
+                                                            download
+                                                            className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                                                        >
+                                                            <Download className="w-3.5 h-3.5" />
+                                                        </a>
+                                                        <button className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                                                            <Share2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    {/* Right side — Fullscreen / Detail button */}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItem(item);
+                                                        }}
                                                         className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                                                        title="View details"
                                                     >
-                                                        <Download className="w-3.5 h-3.5" />
-                                                    </a>
-                                                    <button className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-                                                        <Share2 className="w-3.5 h-3.5" />
+                                                        <Maximize2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -190,6 +240,14 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Content Detail Modal */}
+            {selectedItem && (
+                <ContentDetailModal
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                />
             )}
         </div>
     );
