@@ -11,8 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
-import { hasVariants, getVariantById } from '@/data/modelData';
-import type { Model } from '@/data/modelData';
+import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
+import type { Model, ParamConfig } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 
 // Aspect ratio options with SDXL pixel dimensions
@@ -26,42 +26,24 @@ const aspectRatios = [
     { id: '16:9', label: '16:9', width: 50, height: 28, pixels: '1344 × 768' },
 ];
 
-// Image quantity options
-const quantityOptions = [1, 2, 3, 4];
-
-// Video resolution options
-const videoResolutionOptions = [
-    { id: '480p', label: '480p', width: 854, height: 480 },
-    { id: '720p', label: '720p', width: 1280, height: 720 },
-    { id: '1080p', label: '1080p', width: 1920, height: 1080 },
-    { id: '4k', label: '4K', width: 3840, height: 2160 },
+// CivitAI scheduler options
+const schedulerOptions = [
+    'EulerA', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2A',
+    'DPM2SA', 'DPM2M', 'DPMSDE', 'DPMFast', 'DPMAdaptive',
+    'LMSKarras', 'DPM2Karras', 'DPM2AKarras', 'DPM2SAKarras',
+    'DPM2MKarras', 'DPMSDEKarras', 'DDIM', 'PLMS', 'UniPC', 'LCM', 'DDPM', 'DEIS',
 ];
-
-// Video FPS options
-const fpsOptions = [24, 30, 60];
-
-// Video duration options (seconds)
-const durationOptions = [3, 5, 10, 15];
-
-// Video quantity options
-const videoQuantityOptions = [1, 2, 3, 4];
 
 interface SettingsPanelProps {
     mode: string;
-    generationMode: 'standard' | 'quality';
-    setGenerationMode: (mode: 'standard' | 'quality') => void;
     selectedRatio: string;
     setSelectedRatio: (ratio: string) => void;
     imageQuantity: number;
     setImageQuantity: (num: number) => void;
     videoResolution: string;
     setVideoResolution: (res: string) => void;
-    videoFps: number;
-    setVideoFps: (fps: number) => void;
     videoDuration: number;
     setVideoDuration: (dur: number) => void;
-    videoQuantity: number;
-    setVideoQuantity: (num: number) => void;
     privateCreation: boolean;
     setPrivateCreation: (val: boolean) => void;
     freeCreation: boolean;
@@ -73,24 +55,29 @@ interface SettingsPanelProps {
     setSelectedModel: (model: Model) => void;
     selectedVariantId?: string;
     setSelectedVariantId?: (variantId: string) => void;
+    // CivitAI-specific advanced settings
+    seed: number;
+    setSeed: (val: number) => void;
+    steps: number;
+    setSteps: (val: number) => void;
+    cfgScale: number;
+    setCfgScale: (val: number) => void;
+    scheduler: string;
+    setScheduler: (val: string) => void;
+    clipSkip: number;
+    setClipSkip: (val: number) => void;
 }
 
 export function SettingsPanel({
     mode,
-    generationMode,
-    setGenerationMode,
     selectedRatio,
     setSelectedRatio,
     imageQuantity,
     setImageQuantity,
     videoResolution,
     setVideoResolution,
-    videoFps,
-    setVideoFps,
     videoDuration,
     setVideoDuration,
-    videoQuantity,
-    setVideoQuantity,
     privateCreation,
     setPrivateCreation,
     freeCreation,
@@ -100,7 +87,17 @@ export function SettingsPanel({
     selectedModel,
     setSelectedModel,
     selectedVariantId,
-    setSelectedVariantId
+    setSelectedVariantId,
+    seed,
+    setSeed,
+    steps,
+    setSteps,
+    cfgScale,
+    setCfgScale,
+    scheduler,
+    setScheduler,
+    clipSkip,
+    setClipSkip,
 }: SettingsPanelProps) {
     const navigate = useNavigate();
     const isVideoMode = mode === 'video';
@@ -112,6 +109,9 @@ export function SettingsPanel({
     const currentVariant = hasVariants(selectedModel) && selectedVariantId
         ? getVariantById(selectedModel, selectedVariantId)
         : undefined;
+
+    // Get supported params for current model/variant
+    const params: ParamConfig = getEffectiveParams(selectedModel, selectedVariantId);
 
     const handleModelSelect = (model: Model, variantId?: string) => {
         setSelectedModel(model);
@@ -286,79 +286,18 @@ export function SettingsPanel({
                         </button>
 
                         <div className="px-3 pb-3 space-y-4">
-                            {/* Generation Mode */}
-                            <div>
-                                <div className="flex items-center gap-1 mb-2">
-                                    <span className="text-gray-400 text-xs">Generation Mode</span>
-                                    <Info className="w-3 h-3 text-gray-600" />
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setGenerationMode('standard')}
-                                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${generationMode === 'standard'
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
-                                            }`}
-                                    >
-                                        Standard
-                                    </button>
-                                    <button
-                                        onClick={() => setGenerationMode('quality')}
-                                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${generationMode === 'quality'
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
-                                            }`}
-                                    >
-                                        <Zap className="w-3 h-3" />
-                                        Quality
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Video Resolution - Only for Video Mode */}
-                            {isVideoMode && (
+                            {/* Aspect Ratio / Image Settings — shown when model supports it */}
+                            {params.aspectRatio && (
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-gray-400 text-xs">Video Resolution</span>
-                                        <span className="text-gray-600 text-xs">
-                                            {videoResolutionOptions.find(r => r.id === videoResolution)?.width} × {videoResolutionOptions.find(r => r.id === videoResolution)?.height}
+                                        <span className="text-gray-400 text-xs">
+                                            {isVideoMode ? 'Aspect Ratio' : 'Image Settings'}
                                         </span>
-                                    </div>
-                                    <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-                                        {videoResolutionOptions.map((resolution) => (
-                                            <button
-                                                key={resolution.id}
-                                                onClick={() => setVideoResolution(resolution.id)}
-                                                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all flex-shrink-0 ${videoResolution === resolution.id
-                                                    ? 'bg-emerald-500/20 border border-emerald-500/30'
-                                                    : 'bg-[#141816] border border-white/5 hover:border-white/10'
-                                                    }`}
-                                            >
-                                                <div
-                                                    className={`border-2 rounded ${videoResolution === resolution.id ? 'border-emerald-400' : 'border-gray-500'
-                                                        }`}
-                                                    style={{
-                                                        width: resolution.id === '4k' ? 50 : resolution.id === '1080p' ? 45 : resolution.id === '720p' ? 40 : 35,
-                                                        height: resolution.id === '4k' ? 28 : resolution.id === '1080p' ? 25 : resolution.id === '720p' ? 22 : 20
-                                                    }}
-                                                />
-                                                <span className={`text-[10px] ${videoResolution === resolution.id ? 'text-emerald-400' : 'text-gray-500'}`}>
-                                                    {resolution.label}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Image Settings */}
-                            {!isVideoMode && (
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-gray-400 text-xs">Image Settings</span>
-                                        <span className="text-gray-600 text-xs">
-                                            {aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024'}
-                                        </span>
+                                        {params.widthHeight && (
+                                            <span className="text-gray-600 text-xs">
+                                                {aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024'}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
                                         {aspectRatios.map((ratio) => (
@@ -384,79 +323,58 @@ export function SettingsPanel({
                                 </div>
                             )}
 
-                            {/* Image Quantity */}
-                            {!isVideoMode && (
+                            {/* Atlas Cloud Resolution (1k/2k/4k or 720p/1080p) */}
+                            {params.resolution && (
+                                <div>
+                                    <span className="text-gray-400 text-xs block mb-2">Resolution</span>
+                                    <div className="flex gap-2">
+                                        {params.resolution.options.map((res) => (
+                                            <button
+                                                key={res}
+                                                onClick={() => setVideoResolution(res)}
+                                                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoResolution === res
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                    : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
+                                                    }`}
+                                            >
+                                                {res}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Duration */}
+                            {params.duration && (
+                                <div>
+                                    <span className="text-gray-400 text-xs block mb-2">Duration (Seconds)</span>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {params.duration.options.map((dur) => (
+                                            <button
+                                                key={dur}
+                                                onClick={() => setVideoDuration(dur)}
+                                                className={`flex-1 min-w-[40px] py-2 rounded-lg text-xs font-medium transition-all ${videoDuration === dur
+                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                    : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
+                                                    }`}
+                                            >
+                                                {dur}s
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Image Quantity (CivitAI) */}
+                            {params.quantity && !isVideoMode && (
                                 <div>
                                     <span className="text-gray-400 text-xs block mb-2">Image Quantity</span>
                                     <div className="flex gap-2">
-                                        {quantityOptions.map((num) => (
+                                        {Array.from({ length: params.quantity.max }, (_, i) => i + 1).map((num) => (
                                             <button
                                                 key={num}
                                                 onClick={() => setImageQuantity(num)}
                                                 className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${imageQuantity === num
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
-                                                    }`}
-                                            >
-                                                {num}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Video FPS */}
-                            {isVideoMode && (
-                                <div>
-                                    <span className="text-gray-400 text-xs block mb-2">FPS (Frames Per Second)</span>
-                                    <div className="flex gap-2">
-                                        {fpsOptions.map((fps) => (
-                                            <button
-                                                key={fps}
-                                                onClick={() => setVideoFps(fps)}
-                                                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoFps === fps
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
-                                                    }`}
-                                            >
-                                                {fps}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Video Duration */}
-                            {isVideoMode && (
-                                <div>
-                                    <span className="text-gray-400 text-xs block mb-2">Duration (Seconds)</span>
-                                    <div className="flex gap-2">
-                                        {durationOptions.map((duration) => (
-                                            <button
-                                                key={duration}
-                                                onClick={() => setVideoDuration(duration)}
-                                                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoDuration === duration
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
-                                                    }`}
-                                            >
-                                                {duration}s
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Video Quantity - Only for Video Mode */}
-                            {isVideoMode && (
-                                <div>
-                                    <span className="text-gray-400 text-xs block mb-2">Video Quantity</span>
-                                    <div className="flex gap-2">
-                                        {videoQuantityOptions.map((num) => (
-                                            <button
-                                                key={num}
-                                                onClick={() => setVideoQuantity(num)}
-                                                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoQuantity === num
                                                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                     : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
                                                     }`}
@@ -498,14 +416,129 @@ export function SettingsPanel({
                         </div>
                     </div>
 
-                    {/* Advanced Config - Right above Reset/Notes */}
-                    <button
-                        onClick={() => setAdvancedOpen(!advancedOpen)}
-                        className="w-full flex items-center justify-between p-3 bg-[#1A1E1C] rounded-xl border border-white/5 hover:border-white/10 transition-colors"
-                    >
-                        <span className="text-white text-sm">Advanced Config</span>
-                        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
-                    </button>
+                    {/* Advanced Config — CivitAI-specific settings */}
+                    {(params.steps || params.cfgScale || params.scheduler || params.clipSkip || params.seed) && (
+                        <div className="bg-[#1A1E1C] rounded-xl border border-white/5 overflow-hidden">
+                            <button
+                                onClick={() => setAdvancedOpen(!advancedOpen)}
+                                className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition-colors"
+                            >
+                                <span className="text-white text-sm">Advanced Config</span>
+                                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {advancedOpen && (
+                                <div className="px-3 pb-3 space-y-4">
+                                    {/* Steps */}
+                                    {params.steps && (
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-gray-400 text-xs">Steps</span>
+                                                <span className="text-gray-500 text-xs">{steps}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={params.steps.min}
+                                                max={params.steps.max}
+                                                value={steps}
+                                                onChange={(e) => setSteps(Number(e.target.value))}
+                                                className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                                                <span>{params.steps.min}</span>
+                                                <span>{params.steps.max}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* CFG Scale */}
+                                    {params.cfgScale && (
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-gray-400 text-xs">CFG Scale</span>
+                                                <span className="text-gray-500 text-xs">{cfgScale}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={params.cfgScale.min}
+                                                max={params.cfgScale.max}
+                                                value={cfgScale}
+                                                onChange={(e) => setCfgScale(Number(e.target.value))}
+                                                className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                                                <span>{params.cfgScale.min}</span>
+                                                <span>{params.cfgScale.max}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Scheduler */}
+                                    {params.scheduler && (
+                                        <div>
+                                            <span className="text-gray-400 text-xs block mb-2">Scheduler / Sampler</span>
+                                            <div className="relative">
+                                                <select
+                                                    value={scheduler}
+                                                    onChange={(e) => setScheduler(e.target.value)}
+                                                    className="w-full appearance-none bg-[#141816] border border-white/5 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/30"
+                                                >
+                                                    {schedulerOptions.map((s) => (
+                                                        <option key={s} value={s}>{s}</option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Clip Skip */}
+                                    {params.clipSkip && (
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-gray-400 text-xs">Clip Skip</span>
+                                                <span className="text-gray-500 text-xs">{clipSkip}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={params.clipSkip.min}
+                                                max={params.clipSkip.max}
+                                                value={clipSkip}
+                                                onChange={(e) => setClipSkip(Number(e.target.value))}
+                                                className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                            />
+                                            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+                                                <span>{params.clipSkip.min}</span>
+                                                <span>{params.clipSkip.max}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Seed */}
+                                    {params.seed && (
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-gray-400 text-xs">Seed</span>
+                                                <button
+                                                    onClick={() => setSeed(-1)}
+                                                    className="text-gray-600 text-[10px] hover:text-emerald-400 transition-colors"
+                                                >
+                                                    Random
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={seed}
+                                                onChange={(e) => setSeed(Number(e.target.value))}
+                                                placeholder="-1 for random"
+                                                className="w-full bg-[#141816] border border-white/5 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/30"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

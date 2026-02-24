@@ -13,7 +13,7 @@ import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
-import { getDefaultModel, type Model } from '@/data/modelData';
+import { getDefaultModel, getEffectiveParams, type Model } from '@/data/modelData';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
@@ -68,18 +68,23 @@ export default function GeneratePage() {
   const isVideoMode = mode === 'video';
   const { user } = useAuth();
 
-  const [generationMode, setGenerationMode] = useState<'standard' | 'quality'>('standard');
   const [selectedRatio, setSelectedRatio] = useState('2:3');
   const [imageQuantity, setImageQuantity] = useState(4);
   const [videoResolution, setVideoResolution] = useState('1080p');
-  const [videoFps, setVideoFps] = useState(30);
   const [videoDuration, setVideoDuration] = useState(5);
-  const [videoQuantity, setVideoQuantity] = useState(2);
   const [privateCreation, setPrivateCreation] = useState(false);
   const [freeCreation, setFreeCreation] = useState(true);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // CivitAI advanced settings
+  const [seed, setSeed] = useState(-1);
+  const [steps, setSteps] = useState(30);
+  const [cfgScale, setCfgScale] = useState(7);
+  const [scheduler, setScheduler] = useState('EulerA');
+  const [clipSkip, setClipSkip] = useState(2);
 
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
@@ -296,6 +301,14 @@ export default function GeneratePage() {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,
           ...(mode === 'video' ? { duration: videoDuration } : {}),
+          ...(videoResolution ? { resolution: videoResolution } : {}),
+          // CivitAI-specific params
+          ...(negativePrompt ? { negativePrompt } : {}),
+          ...(seed !== -1 ? { seed } : {}),
+          steps,
+          cfgScale,
+          scheduler,
+          clipSkip,
         }
       };
 
@@ -414,20 +427,14 @@ export default function GeneratePage() {
 
       <SettingsPanel
         mode={mode || 'image'}
-        generationMode={generationMode}
-        setGenerationMode={setGenerationMode}
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
         imageQuantity={imageQuantity}
         setImageQuantity={setImageQuantity}
         videoResolution={videoResolution}
         setVideoResolution={setVideoResolution}
-        videoFps={videoFps}
-        setVideoFps={setVideoFps}
         videoDuration={videoDuration}
         setVideoDuration={setVideoDuration}
-        videoQuantity={videoQuantity}
-        setVideoQuantity={setVideoQuantity}
         privateCreation={privateCreation}
         setPrivateCreation={setPrivateCreation}
         freeCreation={freeCreation}
@@ -438,6 +445,16 @@ export default function GeneratePage() {
         setSelectedModel={setSelectedModel}
         selectedVariantId={selectedVariantId}
         setSelectedVariantId={setSelectedVariantId}
+        seed={seed}
+        setSeed={setSeed}
+        steps={steps}
+        setSteps={setSteps}
+        cfgScale={cfgScale}
+        setCfgScale={setCfgScale}
+        scheduler={scheduler}
+        setScheduler={setScheduler}
+        clipSkip={clipSkip}
+        setClipSkip={setClipSkip}
       />
 
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">
@@ -449,6 +466,9 @@ export default function GeneratePage() {
         <PromptBar
           prompt={prompt}
           setPrompt={setPrompt}
+          negativePrompt={negativePrompt}
+          setNegativePrompt={setNegativePrompt}
+          showNegativePrompt={!!getEffectiveParams(selectedModel, selectedVariantId).negativePrompt}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
         />

@@ -1,39 +1,72 @@
-import { Wand2, ImagePlus, LayoutGrid, MessageSquare } from 'lucide-react';
-import { useRef, useEffect } from 'react';
+import { ImagePlus, LayoutGrid, MessageSquare } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
 
 interface PromptBarProps {
     prompt: string;
     setPrompt: (value: string) => void;
+    negativePrompt: string;
+    setNegativePrompt: (value: string) => void;
+    showNegativePrompt: boolean;
     onGenerate: () => void;
     isGenerating?: boolean;
 }
 
-export function PromptBar({ prompt, setPrompt, onGenerate, isGenerating }: PromptBarProps) {
+export function PromptBar({
+    prompt,
+    setPrompt,
+    negativePrompt,
+    setNegativePrompt,
+    showNegativePrompt,
+    onGenerate,
+    isGenerating,
+}: PromptBarProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [activeTab, setActiveTab] = useState<'positive' | 'negative'>('positive');
 
     // Auto-expand textarea up to max height
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            // Reset height to auto to get the correct scrollHeight
             textarea.style.height = 'auto';
-            // Set height to scrollHeight, capped at max-height (handled by CSS)
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
         }
-    }, [prompt]);
+    }, [prompt, negativePrompt, activeTab]);
+
+    const currentValue = activeTab === 'positive' ? prompt : negativePrompt;
+    const currentSetter = activeTab === 'positive' ? setPrompt : setNegativePrompt;
 
     return (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4">
-            {/* Play It Button - Floating independently */}
-            <div className="mb-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-[#1A1E1C]/60 backdrop-blur-sm rounded-full border border-white/5 text-gray-300 hover:text-white hover:border-white/10 hover:bg-[#1A1E1C]/80 transition-all text-sm">
-                    <Wand2 className="w-4 h-4" />
-                    Play It
-                </button>
-            </div>
+            {/* Prompt Tabs — only show when model supports negative prompt */}
+            {showNegativePrompt && (
+                <div className="flex gap-0 mb-0">
+                    <button
+                        onClick={() => setActiveTab('positive')}
+                        className={`px-4 py-1.5 text-xs font-medium rounded-t-lg transition-all ${activeTab === 'positive'
+                                ? 'bg-[#1A1E1C]/90 text-white border-t border-l border-r border-white/10'
+                                : 'bg-[#141816]/60 text-gray-500 hover:text-gray-300 border-t border-l border-r border-white/5'
+                            }`}
+                    >
+                        Prompt
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('negative')}
+                        className={`px-4 py-1.5 text-xs font-medium rounded-t-lg transition-all ${activeTab === 'negative'
+                                ? 'bg-[#1A1E1C]/90 text-white border-t border-l border-r border-white/10'
+                                : 'bg-[#141816]/60 text-gray-500 hover:text-gray-300 border-t border-l border-r border-white/5'
+                            }`}
+                    >
+                        Negative
+                        {negativePrompt && (
+                            <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                        )}
+                    </button>
+                </div>
+            )}
 
-            {/* Prompt Bar - Dark background for readability */}
-            <div className="flex items-start gap-2 bg-[#1A1E1C]/90 backdrop-blur-md rounded-2xl border border-white/10 px-4 py-3 transition-all duration-300 hover:border-emerald-500/20">
+            {/* Prompt Bar */}
+            <div className={`flex items-start gap-2 bg-[#1A1E1C]/90 backdrop-blur-md border border-white/10 px-4 py-3 transition-all duration-300 hover:border-emerald-500/20 ${showNegativePrompt ? 'rounded-b-2xl rounded-tr-2xl' : 'rounded-2xl'
+                }`}>
                 {/* Left Icon Buttons */}
                 <div className="flex items-center gap-1 flex-shrink-0 pt-1">
                     <button className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors tooltip-trigger" title="Upload Image">
@@ -44,12 +77,15 @@ export function PromptBar({ prompt, setPrompt, onGenerate, isGenerating }: Promp
                     </button>
                 </div>
 
-                {/* Prompt Textarea - Auto-expanding with dark background */}
+                {/* Prompt Textarea */}
                 <textarea
                     ref={textareaRef}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="What do you want to create?"
+                    value={currentValue}
+                    onChange={(e) => currentSetter(e.target.value)}
+                    placeholder={activeTab === 'positive'
+                        ? 'What do you want to create?'
+                        : 'What to avoid in the generation...'
+                    }
                     rows={1}
                     className="flex-1 bg-transparent text-white placeholder:text-gray-400 outline-none text-sm min-w-0 font-medium px-2 py-1 resize-none overflow-y-auto scrollbar-thin max-h-[120px]"
                 />

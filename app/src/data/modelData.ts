@@ -1,6 +1,34 @@
 // Shared model data for use across the application
 // Updated with Atlas Cloud and Civitai model integrations
 
+// Per-model parameter configuration — drives the dynamic settings UI
+export interface ParamConfig {
+    aspectRatio?: boolean;               // Show ratio picker
+    resolution?: {                       // Atlas Cloud resolution presets
+        options: string[];
+        default: string;
+    };
+    widthHeight?: boolean;               // CivitAI custom width/height (derived from ratio)
+    duration?: {
+        options: number[];
+        default: number;
+    };
+    quantity?: {
+        max: number;
+        default: number;
+    };
+    negativePrompt?: boolean;
+    seed?: boolean;
+    steps?: { min: number; max: number; default: number };
+    cfgScale?: { min: number; max: number; default: number };
+    scheduler?: boolean;
+    clipSkip?: { min: number; max: number; default: number };
+    generateAudio?: boolean;
+    promptExpansion?: boolean;
+    shotType?: boolean;
+    loras?: boolean;
+}
+
 export interface ModelVariant {
     id: string;
     name: string;
@@ -10,6 +38,7 @@ export interface ModelVariant {
     description?: string;
     pricing: string;
     pricingUnit?: 'per_sec' | 'per_pic';
+    supportedParams?: ParamConfig;       // Variant-level param overrides
 }
 
 export interface Model {
@@ -27,6 +56,7 @@ export interface Model {
     // Variant support for video models
     variants?: ModelVariant[];
     defaultVariant?: string;
+    supportedParams?: ParamConfig;       // Model-level defaults
 }
 
 // ============================================
@@ -47,6 +77,10 @@ export const imageModels: Model[] = [
         featured: true,
         rating: 4.8,
         description: 'Google\'s next-generation image model with superior text rendering and character consistency',
+        supportedParams: {
+            aspectRatio: true,
+            resolution: { options: ['1k', '2k', '4k'], default: '1k' },
+        },
     },
     {
         id: 15,
@@ -58,6 +92,11 @@ export const imageModels: Model[] = [
         badge: 'NEW',
         rating: 4.7,
         description: 'Alibaba\'s advanced text-to-image model with multiple artistic styles',
+        supportedParams: {
+            aspectRatio: true,
+            negativePrompt: true,
+            seed: true,
+        },
     },
     {
         id: 16,
@@ -69,6 +108,11 @@ export const imageModels: Model[] = [
         badge: 'NEW',
         rating: 4.6,
         description: 'Edit existing images with text prompts while preserving structure',
+        supportedParams: {
+            aspectRatio: true,
+            negativePrompt: true,
+            seed: true,
+        },
     },
     // Civitai Image Models
     {
@@ -82,6 +126,17 @@ export const imageModels: Model[] = [
         badge: 'NEW',
         rating: 4.9,
         description: 'Alibaba\'s 6B parameter standalone image model',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 7,
@@ -93,6 +148,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.8,
         description: 'Illustrious-based SDXL model for high-quality image generation',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 9,
@@ -104,6 +170,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.7,
         description: 'Illustrious-based model with excellent anime and artistic styles',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 10,
@@ -115,6 +192,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.8,
         description: 'High-quality Illustrious-based model with refined outputs',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 11,
@@ -126,6 +214,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.6,
         description: 'Pony-based SDXL model for diverse artistic styles',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 12,
@@ -137,6 +236,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.9,
         description: 'Base Illustrious SDXL model for professional image generation',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 13,
@@ -148,6 +258,17 @@ export const imageModels: Model[] = [
         badge: 'NEW',
         rating: 4.5,
         description: 'NoobAI-based model specialized for furry and anthropomorphic art',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
     {
         id: 14,
@@ -159,6 +280,17 @@ export const imageModels: Model[] = [
         badge: 'Checkpoint',
         rating: 4.7,
         description: 'Illustrious-based merged model with unique artistic style',
+        supportedParams: {
+            aspectRatio: true,
+            widthHeight: true,
+            quantity: { max: 4, default: 4 },
+            negativePrompt: true,
+            seed: true,
+            steps: { min: 1, max: 50, default: 30 },
+            cfgScale: { min: 1, max: 30, default: 7 },
+            scheduler: true,
+            clipSkip: { min: 1, max: 3, default: 2 },
+        },
     },
 ];
 
@@ -188,7 +320,11 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: 'Generate videos from text prompts with physics-accurate motion',
                 pricing: '$0.15',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [10, 15, 25], default: 10 },
+                },
             },
             {
                 id: 'i2v',
@@ -197,7 +333,11 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Transform images into videos with motion and audio',
                 pricing: '$0.15',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [10, 15, 25], default: 10 },
+                },
             }
         ],
         defaultVariant: 't2v'
@@ -221,7 +361,15 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: 'Generate 4-8s videos from text with audio',
                 pricing: '$0.16',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [4, 6, 8], default: 4 },
+                    resolution: { options: ['720p', '1080p'], default: '1080p' },
+                    generateAudio: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             },
             {
                 id: 'ref2v',
@@ -230,7 +378,13 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Use 1-3 reference images for character consistency',
                 pricing: '$0.16',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    resolution: { options: ['720p', '1080p'], default: '1080p' },
+                    generateAudio: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             },
             {
                 id: 'i2v',
@@ -239,7 +393,15 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Animate images into videos with camera motion',
                 pricing: '$0.16',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [4, 6, 8], default: 4 },
+                    resolution: { options: ['720p', '1080p'], default: '1080p' },
+                    generateAudio: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             },
             {
                 id: 'fast-i2v',
@@ -248,7 +410,15 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Faster I2V generation at lower cost',
                 pricing: '$0.08',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [4, 6, 8], default: 4 },
+                    resolution: { options: ['720p', '1080p'], default: '1080p' },
+                    generateAudio: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             }
         ],
         defaultVariant: 't2v'
@@ -273,7 +443,16 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: 'Generate 5-15s videos with multi-shot storytelling',
                 pricing: '$0.07',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    duration: { options: [5, 10, 15], default: 5 },
+                    generateAudio: true,
+                    promptExpansion: true,
+                    shotType: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             },
             {
                 id: 'i2v',
@@ -282,7 +461,16 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Transform images into motion videos',
                 pricing: '$0.07',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [5, 10, 15], default: 5 },
+                    resolution: { options: ['720p', '1080p'], default: '720p' },
+                    generateAudio: true,
+                    promptExpansion: true,
+                    shotType: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             },
             {
                 id: 'flash-i2v',
@@ -291,7 +479,16 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Faster and more cost-effective I2V (30% off)',
                 pricing: '$0.018',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [5, 10, 15], default: 5 },
+                    resolution: { options: ['720p', '1080p'], default: '720p' },
+                    generateAudio: true,
+                    promptExpansion: true,
+                    shotType: true,
+                    negativePrompt: true,
+                    seed: true,
+                },
             }
         ],
         defaultVariant: 't2v'
@@ -315,7 +512,12 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: '720p video generation with LoRA support',
                 pricing: '$0.10',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    aspectRatio: true,
+                    seed: true,
+                    loras: true,
+                },
             },
             {
                 id: 'i2v',
@@ -324,7 +526,11 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: '720p I2V with cinematic motion',
                 pricing: '$0.10',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    seed: true,
+                    loras: true,
+                },
             }
         ],
         defaultVariant: 't2v'
@@ -348,7 +554,10 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: 'Ultra-fast generation up to 20 seconds',
                 pricing: '$0.04',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [6, 8, 10, 12, 14, 16, 18, 20], default: 6 },
+                },
             },
             {
                 id: 'fast-i2v',
@@ -357,7 +566,10 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Animate images quickly up to 20s',
                 pricing: '$0.04',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [6, 8, 10, 12, 14, 16, 18, 20], default: 6 },
+                },
             },
             {
                 id: 'pro-t2v',
@@ -366,7 +578,10 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text'],
                 description: 'Higher quality 6-10s videos with precise control',
                 pricing: '$0.06',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [6, 8, 10], default: 6 },
+                },
             },
             {
                 id: 'pro-i2v',
@@ -375,7 +590,10 @@ export const videoModels: Model[] = [
                 supportedInputs: ['text', 'image'],
                 description: 'Professional-grade I2V with superior consistency',
                 pricing: '$0.06',
-                pricingUnit: 'per_sec'
+                pricingUnit: 'per_sec',
+                supportedParams: {
+                    duration: { options: [6, 8, 10], default: 6 },
+                },
             }
         ],
         defaultVariant: 'fast-t2v'
@@ -425,7 +643,7 @@ export function supportsImageInput(model: Model, variantId?: string): boolean {
         // For image models, check if it's Wan 2.6 Image Edit (ID 16)
         return model.id === 16; // Only Image Edit requires image input
     }
-    
+
     // For video models, check the variant
     const variant = variantId ? getVariantById(model, variantId) : model.variants?.[0];
     return variant?.supportedInputs.includes('image') || false;
@@ -434,12 +652,21 @@ export function supportsImageInput(model: Model, variantId?: string): boolean {
 // Helper to check if model requires image input
 export function requiresImageInput(model: Model, variantId?: string): boolean {
     if (model.id === 16) return true; // Wan 2.6 Image Edit always requires image
-    
+
     if (!hasVariants(model)) return false;
-    
+
     const variant = variantId ? getVariantById(model, variantId) : model.variants?.[0];
     if (!variant) return false;
-    
+
     // Check if it's I2V or Ref2V variant (requires image)
     return variant.id.includes('i2v') || variant.id.includes('ref');
+}
+
+// Helper to get effective params — variant overrides model-level defaults
+export function getEffectiveParams(model: Model, variantId?: string): ParamConfig {
+    if (hasVariants(model) && variantId) {
+        const variant = getVariantById(model, variantId);
+        if (variant?.supportedParams) return variant.supportedParams;
+    }
+    return model.supportedParams || {};
 }
