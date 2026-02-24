@@ -136,11 +136,11 @@ export async function onRequestPost(context: any) {
         // ============================================
         if (modelId === 3) {
             if (selectedVariant === 't2v') {
-                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
+                requestBody.aspect_ratio = params?.size || params?.aspect_ratio || "16:9";
                 const validDurations = [4, 6, 8];
                 requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 4;
                 requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
-                requestBody.generate_audio = params?.generate_audio ?? false;
+                requestBody.generate_audio = params?.generate_audio ?? true;
                 if (params?.negative_prompt || params?.negativePrompt) {
                     requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
                 }
@@ -156,7 +156,7 @@ export async function onRequestPost(context: any) {
                 }
                 requestBody.images = params.images || [params.image];
                 requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
-                requestBody.generate_audio = params?.generate_audio ?? false;
+                requestBody.generate_audio = params?.generate_audio ?? true;
                 if (params?.negative_prompt || params?.negativePrompt) {
                     requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
                 }
@@ -171,11 +171,11 @@ export async function onRequestPost(context: any) {
                     });
                 }
                 requestBody.image = params.image;
-                requestBody.aspect_ratio = params?.aspect_ratio || "16:9";
+                requestBody.aspect_ratio = params?.size || params?.aspect_ratio || "16:9";
                 const validDurations = [4, 6, 8];
                 requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 4;
                 requestBody.resolution = params?.resolution === "720p" ? "720p" : "1080p";
-                requestBody.generate_audio = params?.generate_audio ?? false;
+                requestBody.generate_audio = params?.generate_audio ?? true;
                 if (params?.negative_prompt || params?.negativePrompt) {
                     requestBody.negative_prompt = params.negative_prompt || params.negativePrompt;
                 }

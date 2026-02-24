@@ -367,7 +367,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.16',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['16:9', '9:16'], default: '16:9' },
                     duration: { options: [4, 6, 8], default: 4 },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
                     generateAudio: true,
@@ -399,7 +399,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.16',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['16:9', '9:16'], default: '16:9' },
                     duration: { options: [4, 6, 8], default: 4 },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
                     generateAudio: true,
@@ -416,7 +416,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.08',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['16:9', '9:16'], default: '16:9' },
                     duration: { options: [4, 6, 8], default: 4 },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
                     generateAudio: true,
