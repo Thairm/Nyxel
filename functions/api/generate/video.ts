@@ -66,8 +66,8 @@ export async function onRequestPost(context: any) {
             5: {
                 baseName: "alibaba/wan-2.2",
                 variants: {
-                    "t2v": "alibaba/wan-2.2/t2v-5b-720p-lora",
-                    "i2v": "alibaba/wan-2.2/i2v-5b-720p-lora"
+                    "t2v": "alibaba/wan-2.2/t2v-5b-720p",
+                    "i2v": "alibaba/wan-2.2/i2v-5b-720p"
                 }
             },
             8: {
@@ -227,18 +227,14 @@ export async function onRequestPost(context: any) {
         }
 
         // ============================================
-        // WAN 2.2 (ID: 5) — t2v and i2v
-        // T2V: model, prompt, size("1280*720"/"720*1280"), seed, loras
-        // I2V: model, prompt, image, seed, loras
-        // NOTE: NO duration, NO resolution, NO aspect_ratio params!
+        // WAN 2.2 (ID: 5) — t2v and i2v (5b 720p, non-LoRA)
+        // T2V: model, prompt, size("1280*720"/"720*1280"), seed
+        // I2V: model, prompt, image, seed (size adapts to input image)
         // ============================================
         if (modelId === 5) {
             if (selectedVariant === 't2v') {
-                const ratio = params?.ratio || params?.aspect_ratio || "16:9";
-                requestBody.size = (ratio === '9:16' || ratio === '2:3' || ratio === '3:4')
-                    ? '720*1280' : '1280*720';
+                requestBody.size = params?.size || '1280*720';
                 requestBody.seed = params?.seed ?? -1;
-                requestBody.loras = params?.loras || [];
             }
 
             if (selectedVariant === 'i2v') {
@@ -250,7 +246,6 @@ export async function onRequestPost(context: any) {
                 }
                 requestBody.image = params.image;
                 requestBody.seed = params?.seed ?? -1;
-                requestBody.loras = params?.loras || [];
             }
         }
 
