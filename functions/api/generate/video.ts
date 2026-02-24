@@ -114,7 +114,7 @@ export async function onRequestPost(context: any) {
         if (modelId === 2) {
             const validDurations = [10, 15, 25];
             requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 10;
-            requestBody.size = ratioToSoraSize(params?.ratio || params?.aspect_ratio || "16:9");
+            requestBody.size = params?.size || ratioToSoraSize(params?.ratio || params?.aspect_ratio || "16:9");
 
             if (selectedVariant === 'i2v') {
                 if (!params?.image) {

@@ -8,6 +8,10 @@ export interface ParamConfig {
         options: string[];
         default: string;
     };
+    size?: {                             // Pixel size selector (e.g. Sora2)
+        options: string[];               // e.g. ['1280*720', '720*1280']
+        default: string;
+    };
     widthHeight?: boolean;               // CivitAI custom width/height (derived from ratio)
     duration?: {
         options: number[];
@@ -322,7 +326,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.15',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['1280*720', '720*1280'], default: '1280*720' },
                     duration: { options: [10, 15, 25], default: 10 },
                 },
             },
@@ -335,7 +339,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.15',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['1280*720', '720*1280'], default: '1280*720' },
                     duration: { options: [10, 15, 25], default: 10 },
                 },
             }

@@ -85,6 +85,7 @@ export default function GeneratePage() {
   const [cfgScale, setCfgScale] = useState(7);
   const [scheduler, setScheduler] = useState('EulerA');
   const [clipSkip, setClipSkip] = useState(2);
+  const [videoSize, setVideoSize] = useState('1280*720');
 
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
@@ -319,6 +320,7 @@ export default function GeneratePage() {
           cfgScale,
           scheduler,
           clipSkip,
+          ...(videoSize ? { size: videoSize } : {}),
         }
       };
 
@@ -465,6 +467,8 @@ export default function GeneratePage() {
         setScheduler={setScheduler}
         clipSkip={clipSkip}
         setClipSkip={setClipSkip}
+        videoSize={videoSize}
+        setVideoSize={setVideoSize}
       />
 
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">

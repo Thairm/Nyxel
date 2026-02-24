@@ -12,6 +12,9 @@ function ratioToWanSize(ratio: string): string {
         '3:4': '800*1200',
         '3:2': '1280*960',
         '2:3': '960*1280',
+        '4:5': '1024*1280',
+        '5:4': '1280*1024',
+        '21:9': '1680*720',
     };
     return sizeMap[ratio] || '1280*1280';
 }
@@ -24,8 +27,11 @@ function ratioToSDXLDimensions(ratio: string): { width: number; height: number }
         '3:2': { width: 1216, height: 832 },
         '3:4': { width: 896, height: 1152 },
         '4:3': { width: 1152, height: 896 },
+        '4:5': { width: 960, height: 1200 },
+        '5:4': { width: 1200, height: 960 },
         '9:16': { width: 768, height: 1344 },
         '16:9': { width: 1344, height: 768 },
+        '21:9': { width: 1536, height: 640 },
     };
     return dimensionMap[ratio] || { width: 1024, height: 1024 };
 }

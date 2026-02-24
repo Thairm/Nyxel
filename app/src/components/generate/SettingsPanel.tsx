@@ -22,8 +22,11 @@ const aspectRatios = [
     { id: '3:2', label: '3:2', width: 48, height: 32, pixels: '1216 × 832' },
     { id: '3:4', label: '3:4', width: 36, height: 48, pixels: '896 × 1152' },
     { id: '4:3', label: '4:3', width: 48, height: 36, pixels: '1152 × 896' },
+    { id: '4:5', label: '4:5', width: 38, height: 48, pixels: '960 × 1200' },
+    { id: '5:4', label: '5:4', width: 48, height: 38, pixels: '1200 × 960' },
     { id: '9:16', label: '9:16', width: 28, height: 50, pixels: '768 × 1344' },
     { id: '16:9', label: '16:9', width: 50, height: 28, pixels: '1344 × 768' },
+    { id: '21:9', label: '21:9', width: 55, height: 24, pixels: '1536 × 640' },
 ];
 
 // CivitAI scheduler options
@@ -66,6 +69,9 @@ interface SettingsPanelProps {
     setScheduler: (val: string) => void;
     clipSkip: number;
     setClipSkip: (val: number) => void;
+    // Sora2-style size selector
+    videoSize: string;
+    setVideoSize: (val: string) => void;
 }
 
 export function SettingsPanel({
@@ -98,6 +104,8 @@ export function SettingsPanel({
     setScheduler,
     clipSkip,
     setClipSkip,
+    videoSize,
+    setVideoSize,
 }: SettingsPanelProps) {
     const navigate = useNavigate();
     const isVideoMode = mode === 'video';
@@ -340,6 +348,31 @@ export function SettingsPanel({
                                                 {res}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Size Selector (Sora2-style: pixel dimensions) */}
+                            {params.size && (
+                                <div>
+                                    <span className="text-gray-400 text-xs block mb-2">Size</span>
+                                    <div className="flex gap-2">
+                                        {params.size.options.map((sz) => {
+                                            const [w, h] = sz.split('*');
+                                            const label = Number(w) > Number(h) ? `${sz} (Landscape)` : `${sz} (Portrait)`;
+                                            return (
+                                                <button
+                                                    key={sz}
+                                                    onClick={() => setVideoSize(sz)}
+                                                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoSize === sz
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                        : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
+                                                        }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
