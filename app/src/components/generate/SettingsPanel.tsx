@@ -369,15 +369,16 @@ export function SettingsPanel({
                             {params.size && (
                                 <div>
                                     <span className="text-gray-400 text-xs block mb-2">Size</span>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
                                         {params.size.options.map((sz) => {
                                             const [w, h] = sz.split('*');
-                                            const label = Number(w) > Number(h) ? `${sz} (Landscape)` : `${sz} (Portrait)`;
+                                            const isSquare = w === h;
+                                            const label = isSquare ? `${sz} (Square)` : Number(w) > Number(h) ? `${sz} (Landscape)` : `${sz} (Portrait)`;
                                             return (
                                                 <button
                                                     key={sz}
                                                     onClick={() => setVideoSize(sz)}
-                                                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${videoSize === sz
+                                                    className={`flex-shrink-0 py-2 px-3 rounded-lg text-xs font-medium transition-all ${videoSize === sz
                                                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                         : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
                                                         }`}
@@ -489,8 +490,8 @@ export function SettingsPanel({
                                                             if (type === 'multi') setPromptExpansion(true);
                                                         }}
                                                         className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition-all ${shotType === type
-                                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                                : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
                                                             }`}
                                                     >
                                                         {type}
