@@ -365,15 +365,18 @@ export function SettingsPanel({
                                 </div>
                             )}
 
-                            {/* Size Selector (Sora2-style: pixel dimensions) */}
+                            {/* Size / Aspect Ratio Selector */}
                             {params.size && (
                                 <div>
-                                    <span className="text-gray-400 text-xs block mb-2">Size</span>
+                                    <span className="text-gray-400 text-xs block mb-2">{params.size.options[0]?.includes('*') ? 'Size' : 'Aspect Ratio'}</span>
                                     <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
                                         {params.size.options.map((sz) => {
-                                            const [w, h] = sz.split('*');
-                                            const isSquare = w === h;
-                                            const label = isSquare ? `${sz} (Square)` : Number(w) > Number(h) ? `${sz} (Landscape)` : `${sz} (Portrait)`;
+                                            const isPixelFormat = sz.includes('*');
+                                            let label = sz;
+                                            if (isPixelFormat) {
+                                                const [w, h] = sz.split('*');
+                                                label = w === h ? `${sz} (Square)` : Number(w) > Number(h) ? `${sz} (Landscape)` : `${sz} (Portrait)`;
+                                            }
                                             return (
                                                 <button
                                                     key={sz}
