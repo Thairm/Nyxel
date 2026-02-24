@@ -246,7 +246,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
             {selectedItem && (
                 <ContentDetailModal
                     item={selectedItem}
-                    batchItems={generatedItems.filter(i => i.batchId === selectedItem.batchId)}
+                    batchItems={generatedItems.filter(i => i.batchId === selectedItem.batchId).reverse()}
                     onClose={() => setSelectedItem(null)}
                     onNavigate={(item) => setSelectedItem(item)}
                 />
