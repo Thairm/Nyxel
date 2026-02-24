@@ -90,7 +90,7 @@ export async function onRequestPost(context: any) {
                     model: "google/nano-banana-pro/text-to-image",
                     prompt: prompt,
                     aspect_ratio: params?.ratio || params?.aspect_ratio || "1:1",
-                    resolution: "1k",
+                    resolution: params?.resolution || "1k",
                     enable_sync_mode: true,
                 })
             });
