@@ -93,6 +93,16 @@ export default function GeneratePage() {
     selectedModel.defaultVariant
   );
 
+  // Auto-switch model when navigating between Image/Video modes
+  useEffect(() => {
+    const targetType = mode === 'video' ? 'video' : 'image';
+    if (selectedModel.type !== targetType) {
+      const defaultModel = getDefaultModel(targetType);
+      setSelectedModel(defaultModel);
+      setSelectedVariantId(defaultModel.defaultVariant);
+    }
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
 

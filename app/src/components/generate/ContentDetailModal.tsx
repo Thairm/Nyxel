@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
     X,
     Volume2,
@@ -10,27 +10,46 @@ import {
     Ratio,
     Clock,
     Sparkles,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { getModelById } from '@/data/modelData';
 import type { GeneratedItem } from '@/pages/GeneratePage';
 
 interface ContentDetailModalProps {
     item: GeneratedItem;
+    batchItems: GeneratedItem[];  // All items in the same batch
     onClose: () => void;
+    onNavigate: (item: GeneratedItem) => void;  // Switch to different item in batch
 }
 
-export function ContentDetailModal({ item, onClose }: ContentDetailModalProps) {
+export function ContentDetailModal({ item, batchItems, onClose, onNavigate }: ContentDetailModalProps) {
     const [isMuted, setIsMuted] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    // Close on Escape key
+    const currentIndex = batchItems.findIndex(i => i.id === item.id);
+    const hasPrev = currentIndex > 0;
+    const hasNext = currentIndex < batchItems.length - 1;
+    const showArrows = batchItems.length > 1;
+
+    const goToPrev = useCallback(() => {
+        if (hasPrev) onNavigate(batchItems[currentIndex - 1]);
+    }, [hasPrev, currentIndex, batchItems, onNavigate]);
+
+    const goToNext = useCallback(() => {
+        if (hasNext) onNavigate(batchItems[currentIndex + 1]);
+    }, [hasNext, currentIndex, batchItems, onNavigate]);
+
+    // Close on Escape, navigate with arrow keys
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowLeft') goToPrev();
+            if (e.key === 'ArrowRight') goToNext();
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [onClose, goToPrev, goToNext]);
 
     // Prevent body scroll while modal is open
     useEffect(() => {
@@ -46,6 +65,26 @@ export function ContentDetailModal({ item, onClose }: ContentDetailModalProps) {
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
             onClick={onClose}
         >
+            {/* Left Navigation Arrow */}
+            {showArrows && hasPrev && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+                    className="absolute left-4 z-[10000] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+                >
+                    <ChevronLeft className="w-6 h-6" />
+                </button>
+            )}
+
+            {/* Right Navigation Arrow */}
+            {showArrows && hasNext && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                    className="absolute right-4 z-[10000] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+                >
+                    <ChevronRight className="w-6 h-6" />
+                </button>
+            )}
+
             <div
                 className="relative flex w-[90vw] max-w-[1400px] h-[85vh] bg-[#141816] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
@@ -105,6 +144,12 @@ export function ContentDetailModal({ item, onClose }: ContentDetailModalProps) {
                         <span className="text-gray-500 text-xs">
                             {new Date(item.createdAt).toLocaleString()}
                         </span>
+                        {/* Batch counter */}
+                        {showArrows && (
+                            <span className="text-gray-600 text-xs ml-auto">
+                                {currentIndex + 1} / {batchItems.length}
+                            </span>
+                        )}
                     </div>
 
                     {/* Prompt */}
