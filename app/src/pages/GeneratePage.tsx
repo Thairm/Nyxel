@@ -86,6 +86,10 @@ export default function GeneratePage() {
   const [scheduler, setScheduler] = useState('EulerA');
   const [clipSkip, setClipSkip] = useState(2);
   const [videoSize, setVideoSize] = useState('1280*720');
+  // Wan 2.6 advanced settings
+  const [shotType, setShotType] = useState('multi');
+  const [promptExpansion, setPromptExpansion] = useState(true);
+  const [generateAudio, setGenerateAudio] = useState(true);
 
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
@@ -321,6 +325,10 @@ export default function GeneratePage() {
           scheduler,
           clipSkip,
           ...(videoSize ? { size: videoSize } : {}),
+          // Wan 2.6 advanced params
+          shot_type: shotType,
+          enable_prompt_expansion: promptExpansion,
+          generate_audio: generateAudio,
         }
       };
 
@@ -469,6 +477,12 @@ export default function GeneratePage() {
         setClipSkip={setClipSkip}
         videoSize={videoSize}
         setVideoSize={setVideoSize}
+        shotType={shotType}
+        setShotType={setShotType}
+        promptExpansion={promptExpansion}
+        setPromptExpansion={setPromptExpansion}
+        generateAudio={generateAudio}
+        setGenerateAudio={setGenerateAudio}
       />
 
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">

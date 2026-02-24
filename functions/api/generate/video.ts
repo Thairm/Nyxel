@@ -193,7 +193,7 @@ export async function onRequestPost(context: any) {
         // ============================================
         if (modelId === 4) {
             if (selectedVariant === 't2v') {
-                requestBody.size = ratioToWanVideoSize(params?.ratio || params?.aspect_ratio || "16:9");
+                requestBody.size = params?.size || '1280*720';
                 const validDurations = [5, 10, 15];
                 requestBody.duration = validDurations.includes(params?.duration) ? params.duration : 5;
                 requestBody.generate_audio = params?.generate_audio ?? true;

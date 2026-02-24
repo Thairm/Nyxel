@@ -72,6 +72,13 @@ interface SettingsPanelProps {
     // Sora2-style size selector
     videoSize: string;
     setVideoSize: (val: string) => void;
+    // Wan 2.6 advanced toggles
+    shotType: string;
+    setShotType: (val: string) => void;
+    promptExpansion: boolean;
+    setPromptExpansion: (val: boolean) => void;
+    generateAudio: boolean;
+    setGenerateAudio: (val: boolean) => void;
 }
 
 export function SettingsPanel({
@@ -106,6 +113,12 @@ export function SettingsPanel({
     setClipSkip,
     videoSize,
     setVideoSize,
+    shotType,
+    setShotType,
+    promptExpansion,
+    setPromptExpansion,
+    generateAudio,
+    setGenerateAudio,
 }: SettingsPanelProps) {
     const navigate = useNavigate();
     const isVideoMode = mode === 'video';
@@ -449,8 +462,8 @@ export function SettingsPanel({
                         </div>
                     </div>
 
-                    {/* Advanced Config — CivitAI-specific settings */}
-                    {(params.steps || params.cfgScale || params.scheduler || params.clipSkip || params.seed) && (
+                    {/* Advanced Config — CivitAI + Wan 2.6 advanced settings */}
+                    {(params.steps || params.cfgScale || params.scheduler || params.clipSkip || params.seed || params.shotType || params.promptExpansion || params.generateAudio) && (
                         <div className="bg-[#1A1E1C] rounded-xl border border-white/5 overflow-hidden">
                             <button
                                 onClick={() => setAdvancedOpen(!advancedOpen)}
@@ -462,6 +475,58 @@ export function SettingsPanel({
 
                             {advancedOpen && (
                                 <div className="px-3 pb-3 space-y-4">
+
+                                    {/* Shot Type — Wan 2.6 */}
+                                    {params.shotType && (
+                                        <div>
+                                            <span className="text-gray-400 text-xs block mb-2">Shot Type</span>
+                                            <div className="flex gap-2">
+                                                {['single', 'multi'].map((type) => (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => {
+                                                            setShotType(type);
+                                                            if (type === 'multi') setPromptExpansion(true);
+                                                        }}
+                                                        className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition-all ${shotType === type
+                                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                                : 'bg-[#141816] text-gray-400 border border-white/5 hover:border-white/10'
+                                                            }`}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Prompt Expansion Toggle — Wan 2.6 */}
+                                    {params.promptExpansion && (
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-gray-400 text-xs">Prompt Expansion</span>
+                                                <Info className="w-3 h-3 text-gray-600" />
+                                            </div>
+                                            <Switch
+                                                checked={promptExpansion}
+                                                onCheckedChange={setPromptExpansion}
+                                                disabled={shotType === 'multi'}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Generate Audio Toggle — Wan 2.6 */}
+                                    {params.generateAudio && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-400 text-xs">Generate Audio</span>
+                                            <Switch
+                                                checked={generateAudio}
+                                                onCheckedChange={setGenerateAudio}
+                                                className="data-[state=checked]:bg-emerald-500"
+                                            />
+                                        </div>
+                                    )}
                                     {/* Steps */}
                                     {params.steps && (
                                         <div>

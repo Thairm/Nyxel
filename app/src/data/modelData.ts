@@ -449,7 +449,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.07',
                 pricingUnit: 'per_sec',
                 supportedParams: {
-                    aspectRatio: true,
+                    size: { options: ['1280*720', '720*1280', '960*960', '1088*832', '832*1088'], default: '1280*720' },
                     duration: { options: [5, 10, 15], default: 5 },
                     generateAudio: true,
                     promptExpansion: true,
