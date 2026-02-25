@@ -363,6 +363,22 @@ export default function GeneratePage() {
         throw new Error(data.error || 'Failed to generate');
       }
 
+      // Build settings filtered by what this model actually supports
+      const params = getEffectiveParams(selectedModel, selectedVariantId);
+      const filteredSettings: GenerationSettings = { variantId: selectedVariantId };
+      if (params.aspectRatio) filteredSettings.ratio = selectedRatio;
+      if (params.size) filteredSettings.size = videoSize || params.size.default;
+      if (params.duration) filteredSettings.duration = videoDuration;
+      if (params.resolution) filteredSettings.resolution = videoResolution;
+      if (params.shotType) filteredSettings.shotType = shotType;
+      if (params.promptExpansion) filteredSettings.promptExpansion = promptExpansion;
+      if (params.generateAudio) filteredSettings.generateAudio = generateAudio;
+      if (params.seed && seed !== -1) filteredSettings.seed = seed;
+      if (params.steps) filteredSettings.steps = steps;
+      if (params.cfgScale) filteredSettings.cfgScale = cfgScale;
+      if (params.scheduler) filteredSettings.scheduler = scheduler;
+      if (params.clipSkip) filteredSettings.clipSkip = clipSkip;
+
       // CASE 1: Sync result — image already in B2
       if (data.status === 'completed' && data.mediaUrl) {
         setGeneratedItems(prev => [{
@@ -373,21 +389,7 @@ export default function GeneratePage() {
           modelId: selectedModel.id,
           createdAt: new Date().toISOString(),
           batchId: data.batchId || crypto.randomUUID(),
-          settings: {
-            ratio: selectedRatio,
-            duration: mode === 'video' ? videoDuration : undefined,
-            variantId: selectedVariantId,
-            resolution: mode === 'video' ? videoResolution : undefined,
-            size: videoSize || undefined,
-            shotType: shotType || undefined,
-            promptExpansion: promptExpansion,
-            generateAudio: generateAudio,
-            seed: seed !== -1 ? seed : undefined,
-            steps: steps || undefined,
-            cfgScale: cfgScale || undefined,
-            scheduler: scheduler || undefined,
-            clipSkip: clipSkip || undefined,
-          },
+          settings: filteredSettings,
         }, ...prev]);
         setIsGenerating(false);
         return;
@@ -405,21 +407,7 @@ export default function GeneratePage() {
           mediaType: mediaType as 'image' | 'video',
           userId: user?.id || 'anonymous',
           errorCount: 0,
-          settings: {
-            ratio: selectedRatio,
-            duration: mode === 'video' ? videoDuration : undefined,
-            variantId: selectedVariantId,
-            resolution: mode === 'video' ? videoResolution : undefined,
-            size: videoSize || undefined,
-            shotType: shotType || undefined,
-            promptExpansion: promptExpansion,
-            generateAudio: generateAudio,
-            seed: seed !== -1 ? seed : undefined,
-            steps: steps || undefined,
-            cfgScale: cfgScale || undefined,
-            scheduler: scheduler || undefined,
-            clipSkip: clipSkip || undefined,
-          },
+          settings: filteredSettings,
         };
 
         console.log('[GEN] Adding pending job:', newJob.id, newJob.provider);
