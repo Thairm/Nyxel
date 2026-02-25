@@ -30,6 +30,13 @@ export async function onRequestGet(context: any) {
         const modelId = parseInt(url.searchParams.get('modelId') || '0', 10);
         const mediaType = (url.searchParams.get('mediaType') || 'image') as 'image' | 'video';
 
+        // Parse settings JSON from query param
+        let settings: Record<string, any> | undefined;
+        try {
+            const settingsParam = url.searchParams.get('settings');
+            if (settingsParam) settings = JSON.parse(settingsParam);
+        } catch { /* ignore parse errors */ }
+
         if (!provider) {
             return new Response(JSON.stringify({ error: "Provider is required (atlas or civitai)" }), {
                 status: 400,
@@ -129,6 +136,7 @@ export async function onRequestGet(context: any) {
                             media_type: mediaType,
                             prompt: prompt,
                             model_id: modelId,
+                            settings: settings,
                         });
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);
@@ -230,6 +238,7 @@ export async function onRequestGet(context: any) {
                                 prompt: prompt,
                                 model_id: modelId,
                                 batch_id: batchId,
+                                settings: settings,
                             });
                         } catch (dbError: any) {
                             console.error('Supabase save failed (non-fatal):', dbError.message);

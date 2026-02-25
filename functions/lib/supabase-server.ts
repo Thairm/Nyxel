@@ -22,6 +22,7 @@ export interface GenerationRecord {
     prompt: string;
     model_id: number;
     batch_id?: string;  // Groups images from the same generation together
+    settings?: Record<string, any>;  // Generation settings (ratio, duration, size, etc.)
 }
 
 /**

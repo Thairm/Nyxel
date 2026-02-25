@@ -127,6 +127,7 @@ export async function onRequestPost(context: any) {
                             prompt: prompt,
                             model_id: modelId,
                             batch_id: crypto.randomUUID(),
+                            settings: params || {},
                         });
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);
@@ -205,6 +206,7 @@ export async function onRequestPost(context: any) {
                             prompt: prompt,
                             model_id: modelId,
                             batch_id: crypto.randomUUID(),
+                            settings: params || {},
                         });
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);
@@ -290,6 +292,7 @@ export async function onRequestPost(context: any) {
                             prompt: prompt,
                             model_id: modelId,
                             batch_id: crypto.randomUUID(),
+                            settings: params || {},
                         });
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);

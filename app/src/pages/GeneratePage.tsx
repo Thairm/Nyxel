@@ -33,6 +33,17 @@ export interface GenerationSettings {
   duration?: number;
   variantId?: string;
   resolution?: string;
+  size?: string;
+  shotType?: string;
+  promptExpansion?: boolean;
+  generateAudio?: boolean;
+  negativePrompt?: string;
+  seed?: number;
+  steps?: number;
+  cfgScale?: number;
+  scheduler?: string;
+  clipSkip?: number;
+  [key: string]: any;  // Allow additional params
 }
 
 export interface GeneratedItem {
@@ -130,7 +141,7 @@ export default function GeneratePage() {
     const loadHistory = async () => {
       const { data, error } = await supabase
         .from('generations')
-        .select('id, media_url, media_type, prompt, model_id, created_at, batch_id')
+        .select('id, media_url, media_type, prompt, model_id, created_at, batch_id, settings')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -143,7 +154,8 @@ export default function GeneratePage() {
           prompt: row.prompt,
           modelId: row.model_id,
           createdAt: row.created_at,
-          batchId: row.batch_id || row.id,  // fallback to id for old records without batch_id
+          batchId: row.batch_id || row.id,
+          settings: row.settings || undefined,
         })));
       }
     };
@@ -186,6 +198,7 @@ export default function GeneratePage() {
 
           if (job.jobId) params.set('jobId', job.jobId);
           if (job.token) params.set('token', job.token);
+          if (job.settings) params.set('settings', JSON.stringify(job.settings));
 
           console.log(`[POLL] Checking job ${job.id} (${job.provider})...`);
           const response = await fetch(`/api/generate/status?${params.toString()}`);
@@ -365,6 +378,15 @@ export default function GeneratePage() {
             duration: mode === 'video' ? videoDuration : undefined,
             variantId: selectedVariantId,
             resolution: mode === 'video' ? videoResolution : undefined,
+            size: videoSize || undefined,
+            shotType: shotType || undefined,
+            promptExpansion: promptExpansion,
+            generateAudio: generateAudio,
+            seed: seed !== -1 ? seed : undefined,
+            steps: steps || undefined,
+            cfgScale: cfgScale || undefined,
+            scheduler: scheduler || undefined,
+            clipSkip: clipSkip || undefined,
           },
         }, ...prev]);
         setIsGenerating(false);
@@ -388,6 +410,15 @@ export default function GeneratePage() {
             duration: mode === 'video' ? videoDuration : undefined,
             variantId: selectedVariantId,
             resolution: mode === 'video' ? videoResolution : undefined,
+            size: videoSize || undefined,
+            shotType: shotType || undefined,
+            promptExpansion: promptExpansion,
+            generateAudio: generateAudio,
+            seed: seed !== -1 ? seed : undefined,
+            steps: steps || undefined,
+            cfgScale: cfgScale || undefined,
+            scheduler: scheduler || undefined,
+            clipSkip: clipSkip || undefined,
           },
         };
 

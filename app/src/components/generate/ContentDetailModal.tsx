@@ -12,6 +12,10 @@ import {
     Sparkles,
     ChevronLeft,
     ChevronRight,
+    Hash,
+    Settings2,
+    Clapperboard,
+    Maximize,
 } from 'lucide-react';
 import { getModelById } from '@/data/modelData';
 import type { GeneratedItem } from '@/pages/GeneratePage';
@@ -208,11 +212,32 @@ export function ContentDetailModal({ item, batchItems, onClose, onNavigate }: Co
                             {item.settings?.ratio && (
                                 <SettingCard icon={<Ratio className="w-3.5 h-3.5" />} label="Ratio" value={item.settings.ratio} />
                             )}
+                            {item.settings?.size && (
+                                <SettingCard icon={<Maximize className="w-3.5 h-3.5" />} label="Size" value={item.settings.size} />
+                            )}
                             {item.settings?.duration && (
                                 <SettingCard icon={<Clock className="w-3.5 h-3.5" />} label="Duration" value={`${item.settings.duration}s`} />
                             )}
                             {item.settings?.resolution && (
                                 <SettingCard icon={<Video className="w-3.5 h-3.5" />} label="Resolution" value={item.settings.resolution} />
+                            )}
+                            {item.settings?.shotType && (
+                                <SettingCard icon={<Clapperboard className="w-3.5 h-3.5" />} label="Shot Type" value={item.settings.shotType} />
+                            )}
+                            {item.settings?.generateAudio !== undefined && (
+                                <SettingCard icon={<Volume2 className="w-3.5 h-3.5" />} label="Audio" value={item.settings.generateAudio ? 'On' : 'Off'} />
+                            )}
+                            {item.settings?.seed !== undefined && item.settings.seed !== -1 && (
+                                <SettingCard icon={<Hash className="w-3.5 h-3.5" />} label="Seed" value={String(item.settings.seed)} />
+                            )}
+                            {item.settings?.steps && (
+                                <SettingCard icon={<Settings2 className="w-3.5 h-3.5" />} label="Steps" value={String(item.settings.steps)} />
+                            )}
+                            {item.settings?.cfgScale && (
+                                <SettingCard icon={<Settings2 className="w-3.5 h-3.5" />} label="CFG Scale" value={String(item.settings.cfgScale)} />
+                            )}
+                            {item.settings?.scheduler && (
+                                <SettingCard icon={<Settings2 className="w-3.5 h-3.5" />} label="Scheduler" value={item.settings.scheduler} />
                             )}
                             <SettingCard icon={<Calendar className="w-3.5 h-3.5" />} label="Created" value={new Date(item.createdAt).toLocaleDateString()} />
                         </div>
