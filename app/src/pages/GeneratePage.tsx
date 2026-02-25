@@ -14,6 +14,7 @@ import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
 import { getDefaultModel, getEffectiveParams, type Model } from '@/data/modelData';
+import type { UploadedImage } from '@/components/generate/ImageUploadPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
@@ -102,6 +103,10 @@ export default function GeneratePage() {
   const [promptExpansion, setPromptExpansion] = useState(true);
   const [generateAudio, setGenerateAudio] = useState(true);
 
+  // Image upload state (base64 data URIs, only in browser memory)
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [lastImage, setLastImage] = useState<UploadedImage | null>(null);
+
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
   );
@@ -116,6 +121,9 @@ export default function GeneratePage() {
       const defaultModel = getDefaultModel(targetType);
       setSelectedModel(defaultModel);
       setSelectedVariantId(defaultModel.defaultVariant);
+      // Clear uploaded images when switching modes
+      setUploadedImages([]);
+      setLastImage(null);
     }
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -342,6 +350,10 @@ export default function GeneratePage() {
           shot_type: shotType,
           enable_prompt_expansion: promptExpansion,
           generate_audio: generateAudio,
+          // Image input (base64) for I2V models
+          ...(uploadedImages.length === 1 ? { image: uploadedImages[0].base64 } : {}),
+          ...(uploadedImages.length > 1 ? { images: uploadedImages.map(img => img.base64) } : {}),
+          ...(lastImage ? { last_image: lastImage.base64 } : {}),
         }
       };
 
@@ -502,6 +514,10 @@ export default function GeneratePage() {
         setPromptExpansion={setPromptExpansion}
         generateAudio={generateAudio}
         setGenerateAudio={setGenerateAudio}
+        uploadedImages={uploadedImages}
+        setUploadedImages={setUploadedImages}
+        lastImage={lastImage}
+        setLastImage={setLastImage}
       />
 
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">

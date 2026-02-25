@@ -14,6 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
 import type { Model, ParamConfig } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
+import { ImageUploadPanel } from './ImageUploadPanel';
+import type { UploadedImage } from './ImageUploadPanel';
 
 // Aspect ratio options with SDXL pixel dimensions
 const aspectRatios = [
@@ -79,6 +81,11 @@ interface SettingsPanelProps {
     setPromptExpansion: (val: boolean) => void;
     generateAudio: boolean;
     setGenerateAudio: (val: boolean) => void;
+    // Image upload state
+    uploadedImages: UploadedImage[];
+    setUploadedImages: (images: UploadedImage[]) => void;
+    lastImage: UploadedImage | null;
+    setLastImage: (img: UploadedImage | null) => void;
 }
 
 export function SettingsPanel({
@@ -119,6 +126,10 @@ export function SettingsPanel({
     setPromptExpansion,
     generateAudio,
     setGenerateAudio,
+    uploadedImages,
+    setUploadedImages,
+    lastImage,
+    setLastImage,
 }: SettingsPanelProps) {
     const navigate = useNavigate();
     const isVideoMode = mode === 'video';
@@ -300,6 +311,20 @@ export function SettingsPanel({
                     </div>
 
                     {/* Basic Settings */}
+
+                    {/* Image Upload Panel — shown when model supports image input */}
+                    {params.imageInput && (
+                        <div className="bg-[#1A1E1C] rounded-xl border border-white/5 overflow-hidden p-3">
+                            <ImageUploadPanel
+                                config={params.imageInput}
+                                images={uploadedImages}
+                                onImagesChange={setUploadedImages}
+                                lastImage={lastImage}
+                                onLastImageChange={setLastImage}
+                            />
+                        </div>
+                    )}
+
                     <div className="bg-[#1A1E1C] rounded-xl border border-white/5 overflow-hidden">
                         <button className="w-full flex items-center justify-between p-3">
                             <span className="text-white text-sm">Basic Settings</span>

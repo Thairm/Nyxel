@@ -3,6 +3,12 @@
 
 // Per-model parameter configuration — drives the dynamic settings UI
 export interface ParamConfig {
+    imageInput?: {
+        required: boolean;               // true for I2V variants
+        maxCount: number;                 // 1 for I2V, 3 for Ref2V
+        label: string;                   // "First Frame", "Reference Images", etc.
+        supportsLastImage?: boolean;      // true only for Veo3.1 I2V (first+last frame)
+    };
     aspectRatio?: boolean;               // Show ratio picker
     resolution?: {                       // Atlas Cloud resolution presets
         options: string[];
@@ -339,6 +345,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.15',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     size: { options: ['1280*720', '720*1280'], default: '1280*720' },
                     duration: { options: [10, 15, 25], default: 10 },
                 },
@@ -384,6 +391,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.16',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 3, label: 'Reference Images' },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
                     generateAudio: true,
                     negativePrompt: true,
@@ -399,6 +407,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.16',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'First Frame', supportsLastImage: true },
                     size: { options: ['16:9', '9:16'], default: '16:9' },
                     duration: { options: [4, 6, 8], default: 4 },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
@@ -416,6 +425,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.08',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'First Frame', supportsLastImage: true },
                     size: { options: ['16:9', '9:16'], default: '16:9' },
                     duration: { options: [4, 6, 8], default: 4 },
                     resolution: { options: ['720p', '1080p'], default: '1080p' },
@@ -467,6 +477,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.07',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     duration: { options: [5, 10, 15], default: 5 },
                     resolution: { options: ['720p', '1080p'], default: '720p' },
                     generateAudio: true,
@@ -485,6 +496,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.018',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     duration: { options: [5, 10, 15], default: 5 },
                     resolution: { options: ['720p', '1080p'], default: '720p' },
                     generateAudio: true,
@@ -531,6 +543,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.05',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     seed: true,
                 },
             }
@@ -570,6 +583,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.04',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     duration: { options: [6, 8, 10, 12, 14, 16, 18, 20], default: 6 },
                 },
             },
@@ -594,6 +608,7 @@ export const videoModels: Model[] = [
                 pricing: '$0.06',
                 pricingUnit: 'per_sec',
                 supportedParams: {
+                    imageInput: { required: true, maxCount: 1, label: 'Image' },
                     duration: { options: [6, 8, 10], default: 6 },
                 },
             }
