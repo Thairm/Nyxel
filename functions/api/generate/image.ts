@@ -1,6 +1,7 @@
 import { getCivitaiClient, getCivitaiModelUrn, isCivitaiModel, Scheduler } from '../../lib/civitai-client';
 import { downloadAndUploadToB2 } from '../../lib/b2-client';
-import { saveGeneration } from '../../lib/supabase-server';
+import { saveGeneration, getSupabaseServer } from '../../lib/supabase-server';
+import { getImageCost } from '../../lib/credit-costs';
 
 // Helper: Map frontend aspect ratio to Wan 2.6 size format
 function ratioToWanSize(ratio: string): string {
@@ -63,6 +64,67 @@ function extractAtlasImageUrl(data: any): string | null {
     return null;
 }
 
+/**
+ * Check if a user has enough credits (does NOT deduct).
+ */
+async function checkCredits(
+    serviceKey: string,
+    userId: string,
+    creditType: 'gems' | 'crystals',
+    amount: number
+): Promise<{ sufficient: boolean; current: number; error?: string }> {
+    const supabase = getSupabaseServer(serviceKey);
+    const column = creditType;
+
+    const { data: credits } = await supabase
+        .from('user_credits')
+        .select('gems, crystals')
+        .eq('user_id', userId)
+        .single();
+
+    if (!credits) {
+        return { sufficient: false, current: 0, error: 'No credit record found. Please subscribe or wait for free credits.' };
+    }
+
+    const current = credits[column];
+    if (current < amount) {
+        return { sufficient: false, current, error: `Insufficient ${creditType}. Need ${amount} but have ${current}.` };
+    }
+
+    return { sufficient: true, current };
+}
+
+/**
+ * Actually deduct credits after a successful generation.
+ */
+async function deductCreditsAfterSuccess(
+    serviceKey: string,
+    userId: string,
+    creditType: 'gems' | 'crystals',
+    amount: number
+): Promise<void> {
+    const supabase = getSupabaseServer(serviceKey);
+    const column = creditType;
+
+    const { data: credits } = await supabase
+        .from('user_credits')
+        .select('gems, crystals')
+        .eq('user_id', userId)
+        .single();
+
+    if (!credits) return;
+
+    await supabase
+        .from('user_credits')
+        .update({
+            [column]: Math.max(0, credits[column] - amount),
+            updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+    console.log(`[CREDITS] Deducted ${amount} ${creditType} from user ${userId}. Was: ${credits[column]}, Now: ${Math.max(0, credits[column] - amount)}`);
+}
+
 export async function onRequestPost(context: any) {
     const { request, env } = context;
 
@@ -75,6 +137,41 @@ export async function onRequestPost(context: any) {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
+        }
+
+        // ============================================
+        // Credit Check ONLY (no deduction yet — deduct after success)
+        // ============================================
+        let creditCost: { type: 'gems' | 'crystals'; cost: number } | null = null;
+        if (userId && env.SUPABASE_SERVICE_KEY) {
+            const costInfo = getImageCost(modelId);
+            if (costInfo) {
+                const totalCost = isCivitaiModel(modelId)
+                    ? costInfo.cost * Math.min(quantity || 1, 4)
+                    : costInfo.cost;
+                creditCost = { type: costInfo.type, cost: totalCost };
+
+                const check = await checkCredits(
+                    env.SUPABASE_SERVICE_KEY,
+                    userId,
+                    costInfo.type,
+                    totalCost
+                );
+
+                if (!check.sufficient) {
+                    return new Response(JSON.stringify({
+                        error: check.error,
+                        creditType: costInfo.type,
+                        required: totalCost,
+                        remaining: check.current,
+                    }), {
+                        status: 402,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+
+                console.log(`[CREDITS] Check passed: ${totalCost} ${costInfo.type} needed, user has ${check.current}`);
+            }
         }
 
         // Atlas Cloud Image Models
@@ -132,6 +229,11 @@ export async function onRequestPost(context: any) {
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);
                     }
+                }
+
+                // Deduct credits AFTER successful generation
+                if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
+                    await deductCreditsAfterSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
                 }
 
                 return new Response(JSON.stringify({
@@ -211,6 +313,11 @@ export async function onRequestPost(context: any) {
                     } catch (dbError: any) {
                         console.error('Supabase save failed (non-fatal):', dbError.message);
                     }
+                }
+
+                // Deduct credits AFTER successful generation
+                if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
+                    await deductCreditsAfterSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
                 }
 
                 return new Response(JSON.stringify({
@@ -299,6 +406,11 @@ export async function onRequestPost(context: any) {
                     }
                 }
 
+                // Deduct credits AFTER successful generation
+                if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
+                    await deductCreditsAfterSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
+                }
+
                 return new Response(JSON.stringify({
                     status: 'completed',
                     mediaUrl: permanentUrl,
@@ -368,11 +480,13 @@ export async function onRequestPost(context: any) {
                 });
 
                 // CivitAI returns { token, jobs: [...] }
+                // Pass credit cost info so status.ts can deduct after completion
                 return new Response(JSON.stringify({
                     status: 'processing',
                     token: generationResult.token,
                     provider: 'civitai',
                     model: modelId,
+                    creditCost: creditCost,  // Pass to frontend → status.ts for deduction after success
                 }), {
                     headers: { "Content-Type": "application/json" }
                 });

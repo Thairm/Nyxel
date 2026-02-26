@@ -138,6 +138,7 @@ export default function PricingPage() {
     const { promoUsed, currentTier, loading: promoLoading } = usePromoStatus();
     const [promoCode, setPromoCode] = useState('');
     const [promoError, setPromoError] = useState('');
+    const [portalLoading, setPortalLoading] = useState(false);
 
     const isLoading = authLoading || promoLoading;
 
@@ -147,13 +148,14 @@ export default function PricingPage() {
         const link = SOCIAL_PROMO_CODES[code];
         if (link) {
             if (!user) {
-                // Save code to localStorage so we can redirect after login
                 localStorage.setItem('pendingPromoCode', code);
                 window.location.href = '/auth';
                 return;
             }
             setPromoError('');
-            window.location.href = link;
+            // Append client_reference_id so webhook can match payment to user
+            const separator = link.includes('?') ? '&' : '?';
+            window.location.href = `${link}${separator}client_reference_id=${user.id}`;
         } else {
             setPromoError('Invalid promo code. Please check and try again.');
         }
@@ -178,17 +180,39 @@ export default function PricingPage() {
         return !promoUsed[tier.id];
     };
 
-    // Handle subscribe click
+    // Handle subscribe click — appends client_reference_id for webhook matching
     const handleSubscribeClick = (tier: PricingTier) => {
         if (!user) {
             window.location.href = '/auth';
             return;
         }
-        // Build the payment link URL with promo flag for the success page
         const link = getLinkForTier(tier);
-        // No recording here — promo usage is recorded on the SUCCESS page
-        // after the user actually completes payment
-        window.location.href = link;
+        // Append client_reference_id so Stripe webhook can match this payment to the Supabase user
+        const separator = link.includes('?') ? '&' : '?';
+        window.location.href = `${link}${separator}client_reference_id=${user.id}`;
+    };
+
+    // Handle Manage Subscription — opens Stripe Customer Portal
+    const handleManageSubscription = async () => {
+        if (!user) return;
+        setPortalLoading(true);
+        try {
+            const response = await fetch('/api/stripe/portal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id }),
+            });
+            const data = await response.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert(data.error || 'Failed to open subscription management');
+            }
+        } catch (err) {
+            alert('Failed to connect to subscription portal');
+        } finally {
+            setPortalLoading(false);
+        }
     };
 
     const visibleTiers = tiers.filter(shouldShowTier);
@@ -262,11 +286,20 @@ export default function PricingPage() {
 
                     {/* Current Plan Indicator */}
                     {currentTier && (
-                        <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-4 py-2 mt-2 mb-4">
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-sm text-emerald-400">
-                                You're on the <strong>{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</strong> plan
-                            </span>
+                        <div className="flex flex-col items-center gap-3 mt-2 mb-4">
+                            <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-4 py-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-sm text-emerald-400">
+                                    You're on the <strong>{currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</strong> plan
+                                </span>
+                            </div>
+                            <button
+                                onClick={handleManageSubscription}
+                                disabled={portalLoading}
+                                className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-4 cursor-pointer disabled:opacity-50"
+                            >
+                                {portalLoading ? 'Opening...' : 'Manage / Cancel Subscription'}
+                            </button>
                         </div>
                     )}
 

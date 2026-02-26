@@ -1,51 +1,14 @@
-import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Sparkles, CheckCircle2, PartyPopper } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
 
 export default function SuccessPage() {
     const [searchParams] = useSearchParams();
-    const { user } = useAuth();
-    const [recorded, setRecorded] = useState(false);
     const tier = searchParams.get('tier');
-    const promoParam = searchParams.get('promo'); // 'true', 'social', or null
-    const usedPromo = promoParam === 'true' || promoParam === 'social';
-    const promoSource = promoParam === 'social' ? 'social_media' : promoParam === 'true' ? 'website' : null;
 
-    useEffect(() => {
-        // Record subscription + promo usage in Supabase
-        if (user && tier && !recorded) {
-            const recordSubscription = async () => {
-                // Upsert subscription status
-                await supabase
-                    .from('user_subscriptions')
-                    .upsert(
-                        {
-                            user_id: user.id,
-                            current_tier: tier,
-                            status: 'active',
-                            updated_at: new Date().toISOString(),
-                        },
-                        { onConflict: 'user_id' }
-                    );
-
-                // Record promo usage ONLY if they actually used a promo code
-                if (usedPromo) {
-                    await supabase
-                        .from('promo_usage')
-                        .insert({
-                            user_id: user.id,
-                            tier: tier,
-                            source: promoSource, // 'website' or 'social_media'
-                        });
-                }
-
-                setRecorded(true);
-            };
-            recordSubscription();
-        }
-    }, [user, tier, usedPromo, promoSource, recorded]);
+    // NOTE: Subscription recording and promo usage are now handled
+    // server-side via the Stripe webhook at /api/stripe/webhook.
+    // This page is purely a "thank you" confirmation UI.
+    // The old client-side Supabase writes have been removed.
 
     return (
         <div className="min-h-screen bg-black text-white font-sans flex items-center justify-center px-6">

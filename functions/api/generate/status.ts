@@ -1,9 +1,9 @@
 // Status polling endpoint for async generation jobs
 // Handles both Atlas Cloud and CivitAI async responses
-// On completion: downloads image → uploads to B2 → saves to Supabase → returns permanent URL
+// On completion: downloads image → uploads to B2 → saves to Supabase → deducts credits → returns permanent URL
 
 import { downloadAndUploadToB2 } from '../../lib/b2-client';
-import { saveGeneration } from '../../lib/supabase-server';
+import { saveGeneration, getSupabaseServer } from '../../lib/supabase-server';
 import { getCivitaiClient } from '../../lib/civitai-client';
 
 /**
@@ -14,6 +14,37 @@ function generateFileName(userId: string, mediaType: 'image' | 'video'): string 
     const random = Math.random().toString(36).substring(2, 10);
     const ext = mediaType === 'video' ? 'mp4' : 'png';
     return `generations/${userId}/${timestamp}_${random}.${ext}`;
+}
+
+/**
+ * Deduct credits after a successful generation.
+ */
+async function deductCreditsOnSuccess(
+    serviceKey: string,
+    userId: string,
+    creditType: 'gems' | 'crystals',
+    amount: number
+): Promise<void> {
+    const supabase = getSupabaseServer(serviceKey);
+    const column = creditType;
+
+    const { data: credits } = await supabase
+        .from('user_credits')
+        .select('gems, crystals')
+        .eq('user_id', userId)
+        .single();
+
+    if (!credits) return;
+
+    await supabase
+        .from('user_credits')
+        .update({
+            [column]: Math.max(0, credits[column] - amount),
+            updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+    console.log(`[CREDITS] Deducted ${amount} ${creditType} after successful async job. User: ${userId}. Was: ${credits[column]}, Now: ${Math.max(0, credits[column] - amount)}`);
 }
 
 export async function onRequestGet(context: any) {
@@ -35,6 +66,13 @@ export async function onRequestGet(context: any) {
         try {
             const settingsParam = url.searchParams.get('settings');
             if (settingsParam) settings = JSON.parse(settingsParam);
+        } catch { /* ignore parse errors */ }
+
+        // Parse credit cost from query param (passed by frontend from the generate response)
+        let creditCost: { type: 'gems' | 'crystals'; cost: number } | null = null;
+        try {
+            const creditCostParam = url.searchParams.get('creditCost');
+            if (creditCostParam) creditCost = JSON.parse(creditCostParam);
         } catch { /* ignore parse errors */ }
 
         if (!provider) {
@@ -143,6 +181,11 @@ export async function onRequestGet(context: any) {
                     }
                 }
 
+                // Deduct credits AFTER successful async completion
+                if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
+                    await deductCreditsOnSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
+                }
+
                 return new Response(JSON.stringify({
                     status: 'completed',
                     mediaUrl: permanentUrl,
@@ -247,6 +290,11 @@ export async function onRequestGet(context: any) {
 
                     completedResults.push({ mediaUrl: permanentUrl, generationId });
                 }
+            }
+
+            // Deduct credits AFTER all CivitAI results are uploaded
+            if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
+                await deductCreditsOnSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
             }
 
             return new Response(JSON.stringify({

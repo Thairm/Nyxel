@@ -7,7 +7,6 @@ import {
   Users,
   Volume2,
   MoreHorizontal,
-  Zap
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
@@ -70,6 +69,7 @@ interface PendingJob {
   userId: string;
   errorCount: number;
   settings?: GenerationSettings;
+  creditCost?: { type: string; cost: number } | null;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -106,6 +106,10 @@ export default function GeneratePage() {
   // Image upload state (base64 data URIs, only in browser memory)
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [lastImage, setLastImage] = useState<UploadedImage | null>(null);
+
+  // Credit balance
+  const [gems, setGems] = useState<number>(0);
+  const [crystals, setCrystals] = useState<number>(0);
 
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel(mode === 'video' ? 'video' : 'image')
@@ -171,6 +175,25 @@ export default function GeneratePage() {
     loadHistory();
   }, [user?.id]);
 
+  // Fetch credit balance on mount and after generation
+  const fetchCredits = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`/api/credits/balance?userId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGems(data.gems ?? 0);
+        setCrystals(data.crystals ?? 0);
+      }
+    } catch (err) {
+      console.error('[CREDITS] Failed to fetch balance:', err);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchCredits();
+  }, [fetchCredits]);
+
   // Polling function
   const pollPendingJobs = useCallback(async () => {
     if (isPollingRef.current) return;
@@ -207,6 +230,7 @@ export default function GeneratePage() {
           if (job.jobId) params.set('jobId', job.jobId);
           if (job.token) params.set('token', job.token);
           if (job.settings) params.set('settings', JSON.stringify(job.settings));
+          if (job.creditCost) params.set('creditCost', JSON.stringify(job.creditCost));
 
           console.log(`[POLL] Checking job ${job.id} (${job.provider})...`);
           const response = await fetch(`/api/generate/status?${params.toString()}`);
@@ -404,6 +428,7 @@ export default function GeneratePage() {
           settings: filteredSettings,
         }, ...prev]);
         setIsGenerating(false);
+        fetchCredits(); // Refresh credit balance
         return;
       }
 
@@ -420,6 +445,7 @@ export default function GeneratePage() {
           userId: user?.id || 'anonymous',
           errorCount: 0,
           settings: filteredSettings,
+          creditCost: data.creditCost || null,
         };
 
         console.log('[GEN] Adding pending job:', newJob.id, newJob.provider);
@@ -431,10 +457,16 @@ export default function GeneratePage() {
       setIsGenerating(false);
       console.warn('[GEN] Unexpected response:', data);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('[GEN] Error:', err);
-      alert('Error generating: ' + (err as Error).message);
+      // Handle 402 insufficient credits specifically
+      if (err.message?.includes('Insufficient') || err.message?.includes('credit')) {
+        alert('⚠️ ' + err.message + '\n\nVisit the Pricing page to upgrade your plan.');
+      } else {
+        alert('Error generating: ' + err.message);
+      }
       setIsGenerating(false);
+      fetchCredits(); // Refresh balance even on error
     }
   };
 
@@ -463,16 +495,18 @@ export default function GeneratePage() {
           })}
         </nav>
         <div className="flex flex-col gap-2 w-full px-1">
-          <button className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all">
-            <Zap className="w-5 h-5" />
-            <span className="text-[9px] font-medium">106</span>
-          </button>
-          <button className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-[9px] font-bold">
-              U
+          <Link to="/pricing" className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all" title={`${gems} Gems`}>
+            <div className="w-5 h-5 rounded-full bg-yellow-400/20 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-yellow-400" />
             </div>
-            <span className="text-[9px] font-medium">1.0K</span>
-          </button>
+            <span className="text-[9px] font-medium text-yellow-400">{gems >= 1000 ? `${(gems / 1000).toFixed(1)}K` : gems}</span>
+          </Link>
+          <Link to="/pricing" className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all" title={`${crystals} Crystals`}>
+            <div className="w-5 h-5 rounded-full bg-purple-400/20 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-purple-400" />
+            </div>
+            <span className="text-[9px] font-medium text-purple-400">{crystals >= 1000 ? `${(crystals / 1000).toFixed(1)}K` : crystals}</span>
+          </Link>
         </div>
       </aside>
 

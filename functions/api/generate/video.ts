@@ -2,6 +2,9 @@
 // Supports 15 video model variants across 5 base models
 // API params verified against official Atlas Cloud documentation
 
+import { getSupabaseServer } from '../../lib/supabase-server';
+import { getVideoCost } from '../../lib/credit-costs';
+
 // Helper: Map frontend aspect ratio to pixel size for Wan 2.6 T2V
 function ratioToWanVideoSize(ratio: string): string {
     const sizeMap: Record<string, string> = {
@@ -20,18 +23,77 @@ function ratioToSoraSize(ratio: string): string {
     return '1280*720'; // landscape/square default
 }
 
+/**
+ * Check if user has enough gems (does NOT deduct).
+ */
+async function checkGems(
+    serviceKey: string,
+    userId: string,
+    amount: number
+): Promise<{ sufficient: boolean; current: number; error?: string }> {
+    const supabase = getSupabaseServer(serviceKey);
+
+    const { data: credits } = await supabase
+        .from('user_credits')
+        .select('gems')
+        .eq('user_id', userId)
+        .single();
+
+    if (!credits) {
+        return { sufficient: false, current: 0, error: 'No credit record found. Please subscribe or wait for free credits.' };
+    }
+
+    if (credits.gems < amount) {
+        return { sufficient: false, current: credits.gems, error: `Insufficient gems. Need ${amount} but have ${credits.gems}.` };
+    }
+
+    return { sufficient: true, current: credits.gems };
+}
+
 export async function onRequestPost(context: any) {
     const { request, env } = context;
 
     try {
         const body = await request.json();
-        const { modelId, variantId, prompt, params } = body;
+        const { modelId, variantId, prompt, params, userId } = body;
 
         if (!prompt && !variantId?.includes('i2v') && !variantId?.includes('ref')) {
             return new Response(JSON.stringify({ error: "Prompt is required for text-to-video" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
+        }
+
+        // ============================================
+        // Credit Check ONLY (no deduction — deduct after success in status.ts)
+        // ============================================
+        let creditCost: { type: 'gems'; cost: number } | null = null;
+        if (userId && env.SUPABASE_SERVICE_KEY) {
+            const duration = params?.duration || 5;
+            const costInfo = getVideoCost(modelId, duration);
+            if (costInfo) {
+                creditCost = { type: 'gems', cost: costInfo.cost };
+
+                const check = await checkGems(
+                    env.SUPABASE_SERVICE_KEY,
+                    userId,
+                    costInfo.cost
+                );
+
+                if (!check.sufficient) {
+                    return new Response(JSON.stringify({
+                        error: check.error,
+                        creditType: 'gems',
+                        required: costInfo.cost,
+                        remaining: check.current,
+                    }), {
+                        status: 402,
+                        headers: { "Content-Type": "application/json" }
+                    });
+                }
+
+                console.log(`[CREDITS] Check passed: ${costInfo.cost} gems needed for video, user has ${check.current}`);
+            }
         }
 
         const atlasCloudApiKey = env.ATLAS_CLOUD_API_KEY;
@@ -313,6 +375,7 @@ export async function onRequestPost(context: any) {
                 provider: 'atlas',
                 model: modelId,
                 variant: selectedVariant,
+                creditCost: creditCost,  // Pass to frontend → status.ts for deduction after success
             }), {
                 headers: { "Content-Type": "application/json" }
             });
