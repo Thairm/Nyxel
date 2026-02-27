@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import {
     Image,
-    Video,
     Grid3X3,
     ChevronDown,
     LayoutTemplate,
     Zap,
-    Info
+    Info,
+    Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
-import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
+import { hasVariants, getVariantById, getEffectiveParams, isCivitaiModel } from '@/data/modelData';
 import type { Model, ParamConfig } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 import { ImageUploadPanel } from './ImageUploadPanel';
@@ -55,6 +55,9 @@ interface SettingsPanelProps {
     setFreeCreation: (val: boolean) => void;
     advancedOpen: boolean;
     setAdvancedOpen: (val: boolean) => void;
+    // Tier access for Free Creation
+    canUseFreeCreation: boolean;
+    currentTier: string | null;
     // Model and variant selection
     selectedModel: Model;
     setSelectedModel: (model: Model) => void;
@@ -88,6 +91,13 @@ interface SettingsPanelProps {
     setLastImage: (img: UploadedImage | null) => void;
 }
 
+// CivitAI model IDs (community models that support Free Creation)
+const CIVITAI_MODEL_IDS = [6, 7, 9, 10, 11, 12, 13, 14];
+
+function isCivitaiModel(modelId: number): boolean {
+    return CIVITAI_MODEL_IDS.includes(modelId);
+}
+
 export function SettingsPanel({
     mode,
     selectedRatio,
@@ -104,6 +114,8 @@ export function SettingsPanel({
     setFreeCreation,
     advancedOpen,
     setAdvancedOpen,
+    canUseFreeCreation,
+    currentTier,
     selectedModel,
     setSelectedModel,
     selectedVariantId,
@@ -475,19 +487,40 @@ export function SettingsPanel({
                                 />
                             </div>
 
-                            {/* Free Creation Toggle */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1">
-                                    <span className="text-gray-400 text-xs">Free Creation</span>
-                                    <Zap className="w-3 h-3 text-amber-400" />
-                                    <Info className="w-3 h-3 text-gray-600" />
+                            {/* Free Creation Toggle - Only for CivitAI models */}
+                            {isCivitaiModel(selectedModel.id) && (
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1 group relative">
+                                        <span className={`text-xs ${canUseFreeCreation ? 'text-gray-400' : 'text-gray-500'}`}>Free Creation</span>
+                                        <Zap className={`w-3 h-3 ${canUseFreeCreation ? 'text-amber-400' : 'text-gray-500'}`} />
+                                        {!canUseFreeCreation && (
+                                            <Lock className="w-3 h-3 text-gray-500" />
+                                        )}
+                                        
+                                        {/* Tooltip for locked users */}
+                                        {!canUseFreeCreation && (
+                                            <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                <p className="text-xs text-gray-300">
+                                                    🔒 Upgrade to <strong>Pro</strong> to unlock free generation
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Current: {currentTier || 'Free'}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Switch
+                                        checked={freeCreation && canUseFreeCreation}
+                                        onCheckedChange={(checked) => {
+                                            if (canUseFreeCreation) {
+                                                setFreeCreation(checked);
+                                            }
+                                        }}
+                                        disabled={!canUseFreeCreation}
+                                        className={`data-[state=checked]:bg-emerald-500 ${!canUseFreeCreation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    />
                                 </div>
-                                <Switch
-                                    checked={freeCreation}
-                                    onCheckedChange={setFreeCreation}
-                                    className="data-[state=checked]:bg-emerald-500"
-                                />
-                            </div>
+                            )}
                         </div>
                     </div>
 
