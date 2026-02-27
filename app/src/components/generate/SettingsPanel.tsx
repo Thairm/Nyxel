@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useNavigate } from 'react-router-dom';
-import { hasVariants, getVariantById, getEffectiveParams, isCivitaiModel } from '@/data/modelData';
+import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
 import type { Model, ParamConfig } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
 import { ImageUploadPanel } from './ImageUploadPanel';
@@ -143,9 +142,6 @@ export function SettingsPanel({
     lastImage,
     setLastImage,
 }: SettingsPanelProps) {
-    const navigate = useNavigate();
-    const isVideoMode = mode === 'video';
-
     // Model selection modal state
     const [showModelModal, setShowModelModal] = useState(false);
 
@@ -162,12 +158,6 @@ export function SettingsPanel({
         if (setSelectedVariantId && variantId) {
             setSelectedVariantId(variantId);
         }
-        // Navigate to the correct mode based on model type
-        if (model.type === 'video' && !isVideoMode) {
-            navigate('/generate/video');
-        } else if (model.type === 'image' && isVideoMode) {
-            navigate('/generate/image');
-        }
     };
 
     const handleVariantChange = (variantId: string) => {
@@ -178,32 +168,6 @@ export function SettingsPanel({
 
     return (
         <div className="w-80 bg-[#141816] border-r border-white/5 ml-16 flex flex-col h-screen">
-            {/* Image/Video Toggle - Above Model Selector */}
-            <div className="p-4 border-b border-white/5">
-                <div className="flex gap-1 bg-[#0D0F0E] rounded-lg p-1">
-                    <button
-                        onClick={() => navigate('/generate/image')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${!isVideoMode
-                            ? 'bg-[#1A1E1C] text-white'
-                            : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        <Image className="w-4 h-4" />
-                        Image
-                    </button>
-                    <button
-                        onClick={() => navigate('/generate/video')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${isVideoMode
-                            ? 'bg-[#1A1E1C] text-white'
-                            : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        <Video className="w-4 h-4" />
-                        Video
-                    </button>
-                </div>
-            </div>
-
             {/* Model Selector */}
             <div className="p-4 border-b border-white/5">
                 <div className="flex items-center justify-between mb-3">
@@ -306,7 +270,7 @@ export function SettingsPanel({
                 isOpen={showModelModal}
                 onClose={() => setShowModelModal(false)}
                 onSelect={handleModelSelect}
-                initialMode={isVideoMode ? 'video' : 'image'}
+                initialMode="image"
                 selectedModelId={selectedModel.id}
                 selectedVariantId={selectedVariantId}
             />
@@ -349,7 +313,7 @@ export function SettingsPanel({
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-gray-400 text-xs">
-                                            {isVideoMode ? 'Aspect Ratio' : 'Image Settings'}
+                                            Image Settings
                                         </span>
                                         {params.widthHeight && (
                                             <span className="text-gray-600 text-xs">
@@ -453,7 +417,7 @@ export function SettingsPanel({
                             )}
 
                             {/* Image Quantity (CivitAI) */}
-                            {params.quantity && !isVideoMode && (
+                            {params.quantity && (
                                 <div>
                                     <span className="text-gray-400 text-xs block mb-2">Image Quantity</span>
                                     <div className="flex gap-2">

@@ -11,7 +11,7 @@ import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
-import { getDefaultModel, getEffectiveParams, type Model, imageModels } from '@/data/modelData';
+import { getEffectiveParams, type Model, imageModels } from '@/data/modelData';
 import type { UploadedImage } from '@/components/generate/ImageUploadPanel';
 import { useAuth, usePromoStatus } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
