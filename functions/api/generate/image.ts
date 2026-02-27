@@ -1,7 +1,7 @@
 import { getCivitaiClient, getCivitaiModelUrn, isCivitaiModel, Scheduler } from '../../lib/civitai-client';
 import { downloadAndUploadToB2 } from '../../lib/b2-client';
 import { saveGeneration, getSupabaseServer } from '../../lib/supabase-server';
-import { getImageCost } from '../../lib/credit-costs';
+import { getImageCost, canUseFreeCreation } from '../../lib/credit-costs';
 
 // Helper: Map frontend aspect ratio to Wan 2.6 size format
 function ratioToWanSize(ratio: string): string {
@@ -130,7 +130,7 @@ export async function onRequestPost(context: any) {
 
     try {
         const body = await request.json();
-        const { modelId, prompt, params, userId, quantity } = body;
+        const { modelId, prompt, params, userId, quantity, freeCreation } = body;
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: "Prompt is required" }), {
@@ -141,36 +141,62 @@ export async function onRequestPost(context: any) {
 
         // ============================================
         // Credit Check ONLY (no deduction yet — deduct after success)
+        // Free Creation bypasses crystal cost for Pro/Ultra on CivitAI models.
         // ============================================
         let creditCost: { type: 'gems' | 'crystals'; cost: number } | null = null;
         if (userId && env.SUPABASE_SERVICE_KEY) {
-            const costInfo = getImageCost(modelId);
-            if (costInfo) {
-                const totalCost = isCivitaiModel(modelId)
-                    ? costInfo.cost * Math.min(quantity || 1, 4)
-                    : costInfo.cost;
-                creditCost = { type: costInfo.type, cost: totalCost };
+            // Free Creation guard: Pro/Ultra only, CivitAI models only
+            let skipCreditCheck = false;
+            if (freeCreation && isCivitaiModel(modelId)) {
+                const supabase = getSupabaseServer(env.SUPABASE_SERVICE_KEY);
+                const { data: sub } = await supabase
+                    .from('user_subscriptions')
+                    .select('current_tier, status')
+                    .eq('user_id', userId)
+                    .single();
+                const userTier = (sub?.status === 'active') ? sub.current_tier : null;
 
-                const check = await checkCredits(
-                    env.SUPABASE_SERVICE_KEY,
-                    userId,
-                    costInfo.type,
-                    totalCost
-                );
-
-                if (!check.sufficient) {
+                if (!canUseFreeCreation(userTier)) {
                     return new Response(JSON.stringify({
-                        error: check.error,
-                        creditType: costInfo.type,
-                        required: totalCost,
-                        remaining: check.current,
+                        error: 'Free Creation is a Pro or Ultra feature. Please upgrade your plan.',
                     }), {
-                        status: 402,
-                        headers: { "Content-Type": "application/json" }
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' },
                     });
                 }
+                skipCreditCheck = true;
+                console.log(`[FREE CREATION] Pro/Ultra user ${userId} — skipping crystal cost`);
+            }
 
-                console.log(`[CREDITS] Check passed: ${totalCost} ${costInfo.type} needed, user has ${check.current}`);
+            if (!skipCreditCheck) {
+                const costInfo = getImageCost(modelId);
+                if (costInfo) {
+                    const totalCost = isCivitaiModel(modelId)
+                        ? costInfo.cost * Math.min(quantity || 1, 4)
+                        : costInfo.cost;
+                    creditCost = { type: costInfo.type, cost: totalCost };
+
+                    const check = await checkCredits(
+                        env.SUPABASE_SERVICE_KEY,
+                        userId,
+                        costInfo.type,
+                        totalCost
+                    );
+
+                    if (!check.sufficient) {
+                        return new Response(JSON.stringify({
+                            error: check.error,
+                            creditType: costInfo.type,
+                            required: totalCost,
+                            remaining: check.current,
+                        }), {
+                            status: 402,
+                            headers: { "Content-Type": "application/json" }
+                        });
+                    }
+
+                    console.log(`[CREDITS] Check passed: ${totalCost} ${costInfo.type} needed, user has ${check.current}`);
+                }
             }
         }
 

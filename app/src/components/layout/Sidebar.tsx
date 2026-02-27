@@ -3,7 +3,6 @@ import {
   Home,
   Box,
   Image,
-  Video,
   Sparkles,
   Store,
   Lightbulb,
@@ -23,7 +22,6 @@ const navItems = [
   { icon: Home, label: 'Home', path: '/', active: true },
   { icon: Box, label: 'Models', path: '/models' },
   { icon: Image, label: 'AI Image', path: '/generate/image' },
-  { icon: Video, label: 'AI Video', path: '/generate/video' },
   { icon: Sparkles, label: 'Workflow', path: '/workflow' },
 ];
 
@@ -44,6 +42,15 @@ const tierDisplayNames: Record<string, string> = {
   ultra: 'Ultra Plan',
 };
 
+// Map tier IDs to text colors
+const tierColors: Record<string, string> = {
+  free: 'text-gray-400',
+  starter: 'text-orange-400',
+  standard: 'text-blue-400',
+  pro: 'text-emerald-400',
+  ultra: 'text-purple-400',
+};
+
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,6 +59,7 @@ export function Sidebar() {
   const { displayName, avatarUrl, initial } = getUserDisplayInfo(user);
 
   const planLabel = currentTier ? tierDisplayNames[currentTier] || 'Paid Plan' : 'Free Plan';
+  const planColor = tierColors[currentTier ?? 'free'] ?? 'text-gray-400';
 
   return (
     <aside className="fixed left-0 top-0 w-60 h-full bg-[#0D0F0E] border-r border-white/5 z-50 flex flex-col">
@@ -71,8 +79,7 @@ export function Sidebar() {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path ||
               (item.path === '/generate/image' && location.pathname === '/generate') ||
-              (item.path === '/generate/image' && location.pathname.startsWith('/generate/image')) ||
-              (item.path === '/generate/video' && location.pathname.startsWith('/generate/video'));
+              (item.path === '/generate/image' && location.pathname.startsWith('/generate/image'));
 
             return (
               <Link
@@ -144,7 +151,7 @@ export function Sidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-white font-medium truncate">{displayName}</p>
-                <p className="text-xs text-gray-500">{planLabel}</p>
+                <p className={`text-xs font-medium ${planColor}`}>{planLabel}</p>
               </div>
             </div>
           </>

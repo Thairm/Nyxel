@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import {
-    Image,
-    Video,
     Grid3X3,
     ChevronDown,
     LayoutTemplate,
     Zap,
-    Info
+    Info,
+    Lock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useNavigate } from 'react-router-dom';
 import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
 import type { Model, ParamConfig } from '@/data/modelData';
 import { ModelSelectorModal } from './ModelSelectorModal';
@@ -53,6 +51,7 @@ interface SettingsPanelProps {
     setPrivateCreation: (val: boolean) => void;
     freeCreation: boolean;
     setFreeCreation: (val: boolean) => void;
+    canUseFreeCreation: boolean;
     advancedOpen: boolean;
     setAdvancedOpen: (val: boolean) => void;
     // Model and variant selection
@@ -102,6 +101,7 @@ export function SettingsPanel({
     setPrivateCreation,
     freeCreation,
     setFreeCreation,
+    canUseFreeCreation,
     advancedOpen,
     setAdvancedOpen,
     selectedModel,
@@ -131,7 +131,6 @@ export function SettingsPanel({
     lastImage,
     setLastImage,
 }: SettingsPanelProps) {
-    const navigate = useNavigate();
     const isVideoMode = mode === 'video';
 
     // Model selection modal state
@@ -150,12 +149,6 @@ export function SettingsPanel({
         if (setSelectedVariantId && variantId) {
             setSelectedVariantId(variantId);
         }
-        // Navigate to the correct mode based on model type
-        if (model.type === 'video' && !isVideoMode) {
-            navigate('/generate/video');
-        } else if (model.type === 'image' && isVideoMode) {
-            navigate('/generate/image');
-        }
     };
 
     const handleVariantChange = (variantId: string) => {
@@ -166,32 +159,6 @@ export function SettingsPanel({
 
     return (
         <div className="w-80 bg-[#141816] border-r border-white/5 ml-16 flex flex-col h-screen">
-            {/* Image/Video Toggle - Above Model Selector */}
-            <div className="p-4 border-b border-white/5">
-                <div className="flex gap-1 bg-[#0D0F0E] rounded-lg p-1">
-                    <button
-                        onClick={() => navigate('/generate/image')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${!isVideoMode
-                            ? 'bg-[#1A1E1C] text-white'
-                            : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        <Image className="w-4 h-4" />
-                        Image
-                    </button>
-                    <button
-                        onClick={() => navigate('/generate/video')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${isVideoMode
-                            ? 'bg-[#1A1E1C] text-white'
-                            : 'text-gray-500 hover:text-gray-300'
-                            }`}
-                    >
-                        <Video className="w-4 h-4" />
-                        Video
-                    </button>
-                </div>
-            </div>
-
             {/* Model Selector */}
             <div className="p-4 border-b border-white/5">
                 <div className="flex items-center justify-between mb-3">
@@ -475,17 +442,23 @@ export function SettingsPanel({
                                 />
                             </div>
 
-                            {/* Free Creation Toggle */}
+                            {/* Free Creation Toggle — Pro/Ultra only */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1">
-                                    <span className="text-gray-400 text-xs">Free Creation</span>
-                                    <Zap className="w-3 h-3 text-amber-400" />
+                                    <span className={`text-xs ${canUseFreeCreation ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        Free Creation
+                                    </span>
+                                    {canUseFreeCreation
+                                        ? <Zap className="w-3 h-3 text-amber-400" />
+                                        : <Lock className="w-3 h-3 text-gray-600" title="Upgrade to Pro or Ultra" />
+                                    }
                                     <Info className="w-3 h-3 text-gray-600" />
                                 </div>
                                 <Switch
-                                    checked={freeCreation}
-                                    onCheckedChange={setFreeCreation}
-                                    className="data-[state=checked]:bg-emerald-500"
+                                    checked={canUseFreeCreation && freeCreation}
+                                    onCheckedChange={canUseFreeCreation ? setFreeCreation : undefined}
+                                    disabled={!canUseFreeCreation}
+                                    className="data-[state=checked]:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>

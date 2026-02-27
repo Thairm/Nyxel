@@ -1,26 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Image,
-  Video,
   AppWindow,
   Bot,
   Users,
   Volume2,
   MoreHorizontal,
 } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
 import { getDefaultModel, getEffectiveParams, type Model } from '@/data/modelData';
 import type { UploadedImage } from '@/components/generate/ImageUploadPanel';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, usePromoStatus } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
 // Navigation items for left sidebar with labels
 const navItems = [
   { icon: Image, label: 'Image', path: '/generate/image' },
-  { icon: Video, label: 'Video', path: '/generate/video' },
   { icon: AppWindow, label: 'AI App', path: '#' },
   { icon: Bot, label: 'Agent', path: '#' },
   { icon: Users, label: 'Character', path: '#' },
@@ -76,16 +74,16 @@ const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_ERRORS = 10;
 
 export default function GeneratePage() {
-  const { mode } = useParams<{ mode: string }>();
-  const isVideoMode = mode === 'video';
   const { user } = useAuth();
+  const { currentTier } = usePromoStatus();
+  const canUseFreeCreation = currentTier === 'pro' || currentTier === 'ultra';
 
   const [selectedRatio, setSelectedRatio] = useState('2:3');
   const [imageQuantity, setImageQuantity] = useState(4);
   const [videoResolution, setVideoResolution] = useState('1080p');
   const [videoDuration, setVideoDuration] = useState(5);
   const [privateCreation, setPrivateCreation] = useState(false);
-  const [freeCreation, setFreeCreation] = useState(true);
+  const [freeCreation, setFreeCreation] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
@@ -112,24 +110,11 @@ export default function GeneratePage() {
   const [crystals, setCrystals] = useState<number>(0);
 
   const [selectedModel, setSelectedModel] = useState<Model>(
-    getDefaultModel(mode === 'video' ? 'video' : 'image')
+    getDefaultModel('image')
   );
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
     selectedModel.defaultVariant
   );
-
-  // Auto-switch model when navigating between Image/Video modes
-  useEffect(() => {
-    const targetType = mode === 'video' ? 'video' : 'image';
-    if (selectedModel.type !== targetType) {
-      const defaultModel = getDefaultModel(targetType);
-      setSelectedModel(defaultModel);
-      setSelectedVariantId(defaultModel.defaultVariant);
-      // Clear uploaded images when switching modes
-      setUploadedImages([]);
-      setLastImage(null);
-    }
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
@@ -349,18 +334,18 @@ export default function GeneratePage() {
 
     setIsGenerating(true);
     try {
-      const endpoint = mode === 'video' ? '/api/generate/video' : '/api/generate/image';
-      const mediaType = mode === 'video' ? 'video' : 'image';
+      const endpoint = '/api/generate/image';
+      const mediaType = 'image';
 
       const requestBody: any = {
         modelId: selectedModel.id,
         prompt,
         userId: user?.id || null,
-        quantity: mode === 'video' ? 1 : imageQuantity,
+        quantity: imageQuantity,
+        freeCreation: canUseFreeCreation && freeCreation,
         params: {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,
-          ...(mode === 'video' ? { duration: videoDuration } : {}),
           ...(videoResolution ? { resolution: videoResolution } : {}),
           // CivitAI-specific params
           ...(negativePrompt ? { negativePrompt } : {}),
@@ -380,10 +365,6 @@ export default function GeneratePage() {
           ...(lastImage ? { last_image: lastImage.base64 } : {}),
         }
       };
-
-      if (mode === 'video' && selectedVariantId) {
-        requestBody.variantId = selectedVariantId;
-      }
 
       console.log('[GEN] Sending request:', endpoint, requestBody);
       const response = await fetch(endpoint, {
@@ -478,7 +459,7 @@ export default function GeneratePage() {
         </Link>
         <nav className="flex-1 flex flex-col gap-1 w-full px-1">
           {navItems.map((item) => {
-            const isActive = (isVideoMode && item.label === 'Video') || (!isVideoMode && item.label === 'Image');
+            const isActive = item.label === 'Image';
             return (
               <Link
                 key={item.label}
@@ -511,7 +492,7 @@ export default function GeneratePage() {
       </aside>
 
       <SettingsPanel
-        mode={mode || 'image'}
+        mode="image"
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
         imageQuantity={imageQuantity}
@@ -524,6 +505,7 @@ export default function GeneratePage() {
         setPrivateCreation={setPrivateCreation}
         freeCreation={freeCreation}
         setFreeCreation={setFreeCreation}
+        canUseFreeCreation={canUseFreeCreation}
         advancedOpen={advancedOpen}
         setAdvancedOpen={setAdvancedOpen}
         selectedModel={selectedModel}

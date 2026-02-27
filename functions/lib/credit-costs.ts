@@ -66,3 +66,20 @@ export function getVideoCost(modelId: number, durationSeconds: number): { type: 
     if (perSec === undefined) return null;
     return { type: 'gems', cost: perSec * durationSeconds };
 }
+
+/**
+ * Tier hierarchy for access control.
+ * Higher number = higher tier.
+ */
+export const TIER_HIERARCHY: Record<string, number> = {
+    free: 0, starter: 1, standard: 2, pro: 3, ultra: 4,
+};
+
+/**
+ * Returns true only for Pro or Ultra subscribers.
+ * Free Creation lets Pro/Ultra users generate CivitAI images without spending Crystals.
+ */
+export function canUseFreeCreation(userTier: string | null): boolean {
+    const level = TIER_HIERARCHY[userTier ?? 'free'] ?? 0;
+    return level >= TIER_HIERARCHY['pro'];
+}
