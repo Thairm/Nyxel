@@ -450,7 +450,7 @@ export function SettingsPanel({
                                     </span>
                                     {canUseFreeCreation
                                         ? <Zap className="w-3 h-3 text-amber-400" />
-                                        : <Lock className="w-3 h-3 text-gray-600" title="Upgrade to Pro or Ultra" />
+                                        : <span title="Upgrade to Pro or Ultra"><Lock className="w-3 h-3 text-gray-600" /></span>
                                     }
                                     <Info className="w-3 h-3 text-gray-600" />
                                 </div>
