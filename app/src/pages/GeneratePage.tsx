@@ -7,7 +7,7 @@ import {
   Volume2,
   MoreHorizontal,
 } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
@@ -74,8 +74,6 @@ const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_ERRORS = 10;
 
 export default function GeneratePage() {
-  const { mode } = useParams<{ mode: string }>();
-  const isVideoMode = mode === 'video';
   const { user } = useAuth();
   const { currentTier } = usePromoStatus();
   
@@ -122,17 +120,6 @@ export default function GeneratePage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
     selectedModel.defaultVariant
   );
-
-  // Auto-switch model when navigating (only Image mode now)
-  useEffect(() => {
-    // Always use first image model since video is removed
-    const defaultModel = imageModels[0];
-    setSelectedModel(defaultModel);
-    setSelectedVariantId(defaultModel.defaultVariant);
-    // Clear uploaded images when switching
-    setUploadedImages([]);
-    setLastImage(null);
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
@@ -519,7 +506,6 @@ export default function GeneratePage() {
       </aside>
 
       <SettingsPanel
-        mode={mode || 'image'}
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
         imageQuantity={imageQuantity}

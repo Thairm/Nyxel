@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import {
-    Image,
     Grid3X3,
     ChevronDown,
-    LayoutTemplate,
     Zap,
-    Info,
     Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +36,6 @@ const schedulerOptions = [
 ];
 
 interface SettingsPanelProps {
-    mode: string;
     selectedRatio: string;
     setSelectedRatio: (ratio: string) => void;
     imageQuantity: number;
@@ -98,7 +94,6 @@ function isCivitaiModel(modelId: number): boolean {
 }
 
 export function SettingsPanel({
-    mode,
     selectedRatio,
     setSelectedRatio,
     imageQuantity,
