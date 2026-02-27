@@ -1,24 +1,26 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Image,
+  Video,
   AppWindow,
   Bot,
   Users,
   Volume2,
   MoreHorizontal,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
-import { getEffectiveParams, type Model, imageModels } from '@/data/modelData';
+import { getDefaultModel, getEffectiveParams, type Model } from '@/data/modelData';
 import type { UploadedImage } from '@/components/generate/ImageUploadPanel';
-import { useAuth, usePromoStatus } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
 // Navigation items for left sidebar with labels
 const navItems = [
   { icon: Image, label: 'Image', path: '/generate/image' },
+  { icon: Video, label: 'Video', path: '/generate/video' },
   { icon: AppWindow, label: 'AI App', path: '#' },
   { icon: Bot, label: 'Agent', path: '#' },
   { icon: Users, label: 'Character', path: '#' },
@@ -74,14 +76,9 @@ const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_ERRORS = 10;
 
 export default function GeneratePage() {
+  const { mode } = useParams<{ mode: string }>();
+  const isVideoMode = mode === 'video';
   const { user } = useAuth();
-  const { currentTier } = usePromoStatus();
-  
-  // Check if user can use Free Creation (Pro and Ultra tiers only)
-  const canUseFreeCreation = currentTier === 'pro' || currentTier === 'ultra';
-  
-  // Get tier display name (capitalize first letter)
-  const tierDisplayName = currentTier ? currentTier.charAt(0).toUpperCase() + currentTier.slice(1) : 'Free';
 
   const [selectedRatio, setSelectedRatio] = useState('2:3');
   const [imageQuantity, setImageQuantity] = useState(4);
@@ -115,11 +112,24 @@ export default function GeneratePage() {
   const [crystals, setCrystals] = useState<number>(0);
 
   const [selectedModel, setSelectedModel] = useState<Model>(
-    imageModels[0]
+    getDefaultModel(mode === 'video' ? 'video' : 'image')
   );
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
     selectedModel.defaultVariant
   );
+
+  // Auto-switch model when navigating between Image/Video modes
+  useEffect(() => {
+    const targetType = mode === 'video' ? 'video' : 'image';
+    if (selectedModel.type !== targetType) {
+      const defaultModel = getDefaultModel(targetType);
+      setSelectedModel(defaultModel);
+      setSelectedVariantId(defaultModel.defaultVariant);
+      // Clear uploaded images when switching modes
+      setUploadedImages([]);
+      setLastImage(null);
+    }
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
@@ -339,18 +349,19 @@ export default function GeneratePage() {
 
     setIsGenerating(true);
     try {
-      const endpoint = '/api/generate/image';
-      const mediaType = 'image';
+      const endpoint = mode === 'video' ? '/api/generate/video' : '/api/generate/image';
+      const mediaType = mode === 'video' ? 'video' : 'image';
 
       const requestBody: any = {
         modelId: selectedModel.id,
         prompt,
         userId: user?.id || null,
-        quantity: imageQuantity,
+        quantity: mode === 'video' ? 1 : imageQuantity,
         params: {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,
-          resolution: videoResolution,
+          ...(mode === 'video' ? { duration: videoDuration } : {}),
+          ...(videoResolution ? { resolution: videoResolution } : {}),
           // CivitAI-specific params
           ...(negativePrompt ? { negativePrompt } : {}),
           ...(seed !== -1 ? { seed } : {}),
@@ -358,7 +369,7 @@ export default function GeneratePage() {
           cfgScale,
           scheduler,
           clipSkip,
-          videoSize,
+          ...(videoSize ? { size: videoSize } : {}),
           // Wan 2.6 advanced params
           shot_type: shotType,
           enable_prompt_expansion: promptExpansion,
@@ -370,7 +381,7 @@ export default function GeneratePage() {
         }
       };
 
-      if (selectedVariantId) {
+      if (mode === 'video' && selectedVariantId) {
         requestBody.variantId = selectedVariantId;
       }
 
@@ -484,12 +495,6 @@ export default function GeneratePage() {
           })}
         </nav>
         <div className="flex flex-col gap-2 w-full px-1">
-          <div className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500" title={`Current tier: ${tierDisplayName}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${currentTier === 'ultra' ? 'bg-purple-500/20' : currentTier === 'pro' ? 'bg-emerald-500/20' : currentTier === 'standard' ? 'bg-blue-500/20' : currentTier === 'starter' ? 'bg-orange-500/20' : 'bg-gray-500/20'}`}>
-              <div className={`w-2 h-2 rounded-full ${currentTier === 'ultra' ? 'bg-purple-500' : currentTier === 'pro' ? 'bg-emerald-500' : currentTier === 'standard' ? 'bg-blue-500' : currentTier === 'starter' ? 'bg-orange-500' : 'bg-gray-400'}`} />
-            </div>
-            <span className={`text-[9px] font-medium ${currentTier === 'ultra' ? 'text-purple-400' : currentTier === 'pro' ? 'text-emerald-400' : currentTier === 'standard' ? 'text-blue-400' : currentTier === 'starter' ? 'text-orange-400' : 'text-gray-400'}`}>{tierDisplayName}</span>
-          </div>
           <Link to="/pricing" className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all" title={`${gems} Gems`}>
             <div className="w-5 h-5 rounded-full bg-yellow-400/20 flex items-center justify-center">
               <div className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -506,6 +511,7 @@ export default function GeneratePage() {
       </aside>
 
       <SettingsPanel
+        mode={mode || 'image'}
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
         imageQuantity={imageQuantity}
@@ -546,8 +552,6 @@ export default function GeneratePage() {
         setUploadedImages={setUploadedImages}
         lastImage={lastImage}
         setLastImage={setLastImage}
-        canUseFreeCreation={canUseFreeCreation}
-        currentTier={currentTier}
       />
 
       <main className="flex-1 ml-0 flex flex-col h-screen overflow-hidden relative">

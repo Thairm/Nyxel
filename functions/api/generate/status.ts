@@ -293,11 +293,8 @@ export async function onRequestGet(context: any) {
             }
 
             // Deduct credits AFTER all CivitAI results are uploaded
-            // If creditCost is null (free creation mode), skip deduction
             if (creditCost && userId && env.SUPABASE_SERVICE_KEY) {
                 await deductCreditsOnSuccess(env.SUPABASE_SERVICE_KEY, userId, creditCost.type, creditCost.cost);
-            } else if (userId && env.SUPABASE_SERVICE_KEY) {
-                console.log(`[FREE-CREATION] Skipping crystal deduction for CivitAI batch ${batchId} (Pro/Ultra tier)`);
             }
 
             return new Response(JSON.stringify({

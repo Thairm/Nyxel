@@ -2,40 +2,6 @@
 // Shared between webhook (credit allocation) and generate endpoints (credit deduction)
 
 /**
- * Tier hierarchy for permission checks.
- * Higher number = higher tier with more permissions.
- */
-export const TIER_HIERARCHY: Record<string, number> = {
-    free: 0,
-    starter: 1,
-    standard: 2,
-    pro: 3,
-    ultra: 4,
-};
-
-/**
- * Check if a user has access to a feature requiring minimum tier.
- * @param userTier - The user's current tier
- * @param minimumTier - The minimum tier required for the feature
- * @returns boolean - true if user has access
- */
-export function hasTierAccess(userTier: string | null, minimumTier: string): boolean {
-    if (!userTier) return minimumTier === 'free';
-    const userLevel = TIER_HIERARCHY[userTier] ?? 0;
-    const minLevel = TIER_HIERARCHY[minimumTier] ?? 0;
-    return userLevel >= minLevel;
-}
-
-/**
- * Check if user can use Free Creation mode (Pro and Ultra tiers only).
- * @param userTier - The user's current tier
- * @returns boolean - true if Pro or Ultra
- */
-export function canUseFreeCreation(userTier: string | null): boolean {
-    return hasTierAccess(userTier, 'pro');
-}
-
-/**
  * Credit type and cost for each model ID.
  * Atlas Cloud models use Gems (premium), CivitAI models use Crystals (community).
  */

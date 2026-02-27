@@ -1,7 +1,7 @@
 import { getCivitaiClient, getCivitaiModelUrn, isCivitaiModel, Scheduler } from '../../lib/civitai-client';
 import { downloadAndUploadToB2 } from '../../lib/b2-client';
 import { saveGeneration, getSupabaseServer } from '../../lib/supabase-server';
-import { getImageCost, canUseFreeCreation } from '../../lib/credit-costs';
+import { getImageCost } from '../../lib/credit-costs';
 
 // Helper: Map frontend aspect ratio to Wan 2.6 size format
 function ratioToWanSize(ratio: string): string {
@@ -130,41 +130,13 @@ export async function onRequestPost(context: any) {
 
     try {
         const body = await request.json();
-        const { modelId, prompt, params, userId, quantity, freeCreation } = body;
+        const { modelId, prompt, params, userId, quantity } = body;
 
         if (!prompt) {
             return new Response(JSON.stringify({ error: "Prompt is required" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
             });
-        }
-
-        // ============================================
-        // Free Creation Tier Check - Security Validation
-        // Only Pro and Ultra tiers can use Free Creation mode
-        // ============================================
-        if (freeCreation && userId && env.SUPABASE_SERVICE_KEY) {
-            const supabase = getSupabaseServer(env.SUPABASE_SERVICE_KEY);
-            const { data: sub } = await supabase
-                .from('user_subscriptions')
-                .select('current_tier, status')
-                .eq('user_id', userId)
-                .single();
-            
-            const userTier = sub?.status === 'active' ? sub.current_tier : 'free';
-            
-            if (!canUseFreeCreation(userTier)) {
-                return new Response(JSON.stringify({
-                    error: 'Free Creation mode requires Pro or Ultra subscription. Please upgrade your plan.',
-                    currentTier: userTier,
-                    requiredTier: 'pro',
-                }), {
-                    status: 403,
-                    headers: { "Content-Type": "application/json" }
-                });
-            }
-            
-            console.log(`[FREE-CREATION] User ${userId} with tier ${userTier} authorized for free generation`);
         }
 
         // ============================================
@@ -507,38 +479,14 @@ export async function onRequestPost(context: any) {
                     quantity: imageQuantity,
                 });
 
-                // Check if this is Free Creation mode (Pro/Ultra tier only)
-                // If freeCreation=true and user is authorized, set creditCost to null to skip deduction
-                const isFreeCreation = freeCreation && userId && env.SUPABASE_SERVICE_KEY;
-                let effectiveCreditCost = creditCost;
-                
-                if (isFreeCreation) {
-                    const supabase = getSupabaseServer(env.SUPABASE_SERVICE_KEY);
-                    const { data: sub } = await supabase
-                        .from('user_subscriptions')
-                        .select('current_tier, status')
-                        .eq('user_id', userId)
-                        .single();
-                    
-                    const userTier = sub?.status === 'active' ? sub.current_tier : 'free';
-                    
-                    if (canUseFreeCreation(userTier)) {
-                        // Pro/Ultra tier - skip crystal deduction
-                        effectiveCreditCost = null;
-                        console.log(`[FREE-CREATION] Pro/Ultra user ${userId} - skipping crystal deduction for CivitAI model ${modelId}`);
-                    }
-                }
-
                 // CivitAI returns { token, jobs: [...] }
                 // Pass credit cost info so status.ts can deduct after completion
-                // If effectiveCreditCost is null, no deduction will occur
                 return new Response(JSON.stringify({
                     status: 'processing',
                     token: generationResult.token,
                     provider: 'civitai',
                     model: modelId,
-                    creditCost: effectiveCreditCost,  // null for free creation, otherwise normal cost
-                    freeCreation: isFreeCreation && effectiveCreditCost === null, // Flag to indicate free mode
+                    creditCost: creditCost,  // Pass to frontend → status.ts for deduction after success
                 }), {
                     headers: { "Content-Type": "application/json" }
                 });
