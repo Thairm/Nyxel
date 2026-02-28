@@ -2,12 +2,10 @@ import { useState } from 'react';
 import {
     Grid3X3,
     ChevronDown,
-    LayoutTemplate,
     Zap,
     Info,
     Lock,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
 import type { Model, ParamConfig } from '@/data/modelData';
@@ -245,11 +243,6 @@ export function SettingsPanel({
                     </div>
                 )}
 
-                <button className="w-full mt-3 p-2.5 bg-[#1A1E1C] rounded-lg border border-white/5 text-gray-400 text-sm hover:text-white hover:border-white/10 transition-colors flex items-center justify-center gap-2">
-                    <LayoutTemplate className="w-4 h-4" />
-                    Combo Library
-                    <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px] border-0 ml-1">NEW</Badge>
-                </button>
             </div>
 
             {/* Model Selector Modal */}

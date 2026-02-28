@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Image,
-  AppWindow,
-  Bot,
-  Users,
-  Volume2,
-  MoreHorizontal,
+  FileText,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
@@ -19,11 +15,7 @@ import { supabase } from '@/lib/supabase';
 // Navigation items for left sidebar with labels
 const navItems = [
   { icon: Image, label: 'Image', path: '/generate/image' },
-  { icon: AppWindow, label: 'AI App', path: '#' },
-  { icon: Bot, label: 'Agent', path: '#' },
-  { icon: Users, label: 'Character', path: '#' },
-  { icon: Volume2, label: 'Audio', path: '#' },
-  { icon: MoreHorizontal, label: 'More', path: '#' },
+  { icon: FileText, label: 'Docs', path: '/docs' },
 ];
 
 export interface GenerationSettings {

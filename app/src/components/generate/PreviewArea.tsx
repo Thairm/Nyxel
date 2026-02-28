@@ -4,8 +4,6 @@ import {
     Download,
     Share2,
     Video,
-    LayoutGrid,
-    SlidersHorizontal,
     Maximize2,
     RefreshCw,
     ImageIcon,
@@ -68,17 +66,6 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                             {pendingCount} generating...
                         </span>
                     )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <button className="w-8 h-8 rounded-lg bg-[#1A1E1C] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/10 transition-colors">
-                        <LayoutGrid className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 rounded-lg bg-[#1A1E1C] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/10 transition-colors">
-                        <SlidersHorizontal className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 rounded-lg bg-[#1A1E1C] border border-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/10 transition-colors">
-                        <Maximize2 className="w-4 h-4" />
-                    </button>
                 </div>
             </div>
 

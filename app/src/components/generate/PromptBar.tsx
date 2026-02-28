@@ -1,4 +1,3 @@
-import { ImagePlus, LayoutGrid, MessageSquare } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 
 interface PromptBarProps {
@@ -67,16 +66,6 @@ export function PromptBar({
             {/* Prompt Bar */}
             <div className={`flex items-start gap-2 bg-[#1A1E1C]/90 backdrop-blur-md border border-white/10 px-4 py-3 transition-all duration-300 hover:border-emerald-500/20 ${showNegativePrompt ? 'rounded-b-2xl rounded-tr-2xl' : 'rounded-2xl'
                 }`}>
-                {/* Left Icon Buttons */}
-                <div className="flex items-center gap-1 flex-shrink-0 pt-1">
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors tooltip-trigger" title="Upload Image">
-                        <ImagePlus className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors tooltip-trigger" title="Templates">
-                        <LayoutGrid className="w-4 h-4" />
-                    </button>
-                </div>
-
                 {/* Prompt Textarea */}
                 <textarea
                     ref={textareaRef}
@@ -92,10 +81,6 @@ export function PromptBar({
 
                 {/* Right Side Buttons */}
                 <div className="flex items-center gap-2 flex-shrink-0 pt-1">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 text-gray-400 hover:text-emerald-400 transition-colors bg-white/5 rounded-full hover:bg-white/10">
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="text-xs font-medium">Assistant</span>
-                    </button>
                     <button
                         onClick={onGenerate}
                         disabled={isGenerating || !prompt.trim()}
