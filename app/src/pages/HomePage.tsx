@@ -27,11 +27,11 @@ const featureCards = [
         path: '/pricing'
     },
     {
-        title: 'AI Characters',
-        subtitle: 'Virtual Bond, Real Connection',
-        image: '/feature-ai-char.jpg',
-        gradient: 'from-emerald-500/20 to-cyan-500/20',
-        path: '#'
+        title: 'Illustration Studio',
+        subtitle: 'Anime, Fantasy & Portrait Art',
+        image: '/feature-ai-char.jpg', // Replace with /feature-illustration.jpg after generating one on Nyxel
+        gradient: 'from-purple-500/20 to-pink-500/20',
+        path: '/generate/image'
     }
 ];
 

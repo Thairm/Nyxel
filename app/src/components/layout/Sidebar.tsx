@@ -1,16 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
-  Box,
   Image,
-  Sparkles,
-  Store,
-  Lightbulb,
-  GraduationCap,
-  Users,
   FileText,
-  MoreHorizontal,
-  ShoppingCart,
   LogIn,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,18 +11,11 @@ import { usePromoStatus } from '@/hooks/useAuth';
 
 // Navigation items
 const navItems = [
-  { icon: Home, label: 'Home', path: '/', active: true },
-  { icon: Box, label: 'Models', path: '/models' },
+  { icon: Home, label: 'Home', path: '/' },
   { icon: Image, label: 'AI Image', path: '/generate/image' },
-  { icon: Sparkles, label: 'Workflow', path: '/workflow' },
 ];
 
 const secondaryNav = [
-  { icon: Store, label: 'Events', path: '/events' },
-  { icon: Lightbulb, label: 'Inspiration', path: '/inspiration' },
-  { icon: ShoppingCart, label: 'AI Shops', path: '/shops' },
-  { icon: GraduationCap, label: 'Creator Academy', path: '/academy' },
-  { icon: Users, label: 'Profile', path: '/profile' },
   { icon: FileText, label: 'Documentation', path: '/docs' },
 ];
 
@@ -120,11 +105,6 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* More Button */}
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-200 w-full mt-2">
-          <MoreHorizontal className="w-4 h-4" />
-          <span>More</span>
-        </button>
       </ScrollArea>
 
       {/* Footer */}
