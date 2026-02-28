@@ -50,6 +50,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const hasInitialScrollRef = useRef(false);
     const prevItemCountRef = useRef(0);
+    const prevFirstItemIdRef = useRef<string | null>(null);
 
     // Auto-scroll to bottom on initial load (so user sees newest generation)
     useEffect(() => {
@@ -68,10 +69,18 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
     useEffect(() => {
         const prevCount = prevItemCountRef.current;
         const currentCount = generatedItems.length;
-        prevItemCountRef.current = currentCount;
+        const currentFirstId = generatedItems.length > 0 ? generatedItems[0].id : null;
+        const prevFirstId = prevFirstItemIdRef.current;
 
-        // Only smooth-scroll for new generations (count increased from non-zero), not initial load
-        if (prevCount > 0 && currentCount > prevCount && hasInitialScrollRef.current && scrollContainerRef.current) {
+        prevItemCountRef.current = currentCount;
+        prevFirstItemIdRef.current = currentFirstId;
+
+        // Only smooth-scroll when NEW items were prepended (first item ID changed)
+        // Skip when old items are appended via load-more (first item unchanged)
+        const isNewGeneration = prevFirstId !== null && currentFirstId !== prevFirstId;
+
+        if (isNewGeneration && prevCount > 0 && currentCount > prevCount
+            && hasInitialScrollRef.current && scrollContainerRef.current) {
             setTimeout(() => {
                 scrollContainerRef.current?.scrollTo({
                     top: scrollContainerRef.current.scrollHeight,
@@ -79,7 +88,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                 });
             }, 100);
         }
-    }, [generatedItems.length]);
+    }, [generatedItems]);
 
     // Infinite scroll: load more when user scrolls near top
     const handleScroll = useCallback(() => {
