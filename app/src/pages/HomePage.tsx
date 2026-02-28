@@ -29,7 +29,7 @@ const featureCards = [
     {
         title: 'Illustration Studio',
         subtitle: 'Anime, Fantasy & Portrait Art',
-        image: '/feature-ai-char.jpg', // Replace with /feature-illustration.jpg after generating one on Nyxel
+        image: '/feature-illustration.jpg',
         gradient: 'from-purple-500/20 to-pink-500/20',
         path: '/generate/image'
     }
