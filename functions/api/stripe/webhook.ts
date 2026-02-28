@@ -68,45 +68,58 @@ async function stripeGet(path: string, secretKey: string): Promise<any> {
 // Tier Detection from Stripe Price
 // ============================================================
 
-// Map your Stripe price amounts (in cents) to tier names.
-// Update these if your Stripe prices change.
+// Map base subscription prices (in cents) to tier names.
+// Only base prices here — coupons are handled by using amount_subtotal or line_items.
 const PRICE_TO_TIER: Record<number, string> = {
-    499: 'starter',   // $4.99
-    249: 'starter',   // $2.49 (50% promo)
-    999: 'standard',  // $9.99
-    500: 'standard',  // ~$5.00 (50% promo, rounded)
-    1999: 'pro',       // $19.99
-    1000: 'pro',       // ~$10.00 (50% promo, rounded)
-    2999: 'ultra',     // $29.99
-    1500: 'ultra',     // ~$15.00 (50% promo, rounded)
+    499: 'starter',    // $4.99/mo
+    999: 'standard',   // $9.99/mo
+    1999: 'pro',       // $19.99/mo
+    2999: 'ultra',     // $29.99/mo
 };
-
-// Fallback: map by Stripe price ID if you prefer (more reliable).
-// Populate these with your actual Stripe price IDs.
-// const PRICE_ID_TO_TIER: Record<string, string> = {
-//     'price_xxx': 'starter',
-//     'price_yyy': 'standard',
-// };
 
 function detectTierFromAmount(amountInCents: number): string | null {
     return PRICE_TO_TIER[amountInCents] || null;
 }
 
-function detectTierFromSession(session: any): string {
-    // 1. Check metadata (most reliable — set when creating checkout)
-    if (session.metadata?.tier) return session.metadata.tier;
-
-    // 2. Check client_reference_id format (e.g., "userId:tier")
-    // We'll use a simpler approach: just the userId in client_reference_id
-
-    // 3. Fallback: detect from amount
-    const amount = session.amount_total;
-    if (amount) {
-        const tier = detectTierFromAmount(amount);
-        if (tier) return tier;
+async function detectTierFromSession(session: any, stripeSecretKey: string): Promise<string> {
+    // 1. Check metadata (most reliable — can be set on Payment Links in Stripe Dashboard)
+    if (session.metadata?.tier) {
+        console.log(`[WEBHOOK] Tier from metadata: ${session.metadata.tier}`);
+        return session.metadata.tier;
     }
 
-    return 'starter'; // safe default
+    // 2. Fetch line_items from Stripe API — price.unit_amount is coupon-proof
+    if (stripeSecretKey && session.id) {
+        try {
+            const lineItems = await stripeGet(
+                `/checkout/sessions/${session.id}/line_items`,
+                stripeSecretKey
+            );
+            const unitAmount = lineItems?.data?.[0]?.price?.unit_amount;
+            if (unitAmount) {
+                const tier = detectTierFromAmount(unitAmount);
+                if (tier) {
+                    console.log(`[WEBHOOK] Tier from line_items: ${tier} (unit_amount=${unitAmount})`);
+                    return tier;
+                }
+            }
+        } catch (err: any) {
+            console.error(`[WEBHOOK] Failed to fetch line_items: ${err.message}`);
+        }
+    }
+
+    // 3. Fallback: use amount_subtotal (pre-discount price, NOT amount_total)
+    const amount = session.amount_subtotal || session.amount_total;
+    if (amount) {
+        const tier = detectTierFromAmount(amount);
+        if (tier) {
+            console.log(`[WEBHOOK] Tier from amount_subtotal: ${tier} (amount=${amount})`);
+            return tier;
+        }
+    }
+
+    console.warn(`[WEBHOOK] Could not detect tier, defaulting to starter`);
+    return 'starter';
 }
 
 // ============================================================
@@ -127,8 +140,8 @@ async function handleCheckoutCompleted(session: any, env: any) {
         return;
     }
 
-    const tier = detectTierFromSession(session);
-    console.log(`[WEBHOOK] Checkout completed: user=${userId}, tier=${tier}, customer=${stripeCustomerId}`);
+    const tier = await detectTierFromSession(session, env.STRIPE_SECRET_KEY || '');
+    console.log(`[WEBHOOK] Checkout completed: user=${userId}, tier=${tier}, customer=${stripeCustomerId}, subtotal=${session.amount_subtotal}, total=${session.amount_total}`);
 
     // 1. Upsert subscription record
     await supabase

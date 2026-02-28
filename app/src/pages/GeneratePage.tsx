@@ -118,6 +118,10 @@ export default function GeneratePage() {
   const [gems, setGems] = useState<number>(0);
   const [crystals, setCrystals] = useState<number>(0);
 
+  // Pagination for generation history
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [selectedModel, setSelectedModel] = useState<Model>(
     getDefaultModel('image')
   );
@@ -176,11 +180,47 @@ export default function GeneratePage() {
           batchId: row.batch_id || row.id,
           settings: row.settings || undefined,
         })));
+        setHasMoreHistory(data.length === 50); // If less than 50, no more to load
       }
     };
 
     loadHistory();
   }, [user?.id]);
+
+  // Load more history when user scrolls to top (infinite scroll)
+  const loadMoreHistory = useCallback(async () => {
+    if (!user?.id || loadingMore || !hasMoreHistory || generatedItems.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const oldestItem = generatedItems[generatedItems.length - 1];
+      const { data, error } = await supabase
+        .from('generations')
+        .select('id, media_url, media_type, prompt, model_id, created_at, batch_id, settings')
+        .eq('user_id', user.id)
+        .lt('created_at', oldestItem.createdAt)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (data && !error) {
+        const mapped = data.map((row: any) => ({
+          id: row.id,
+          mediaUrl: row.media_url,
+          mediaType: row.media_type,
+          prompt: row.prompt,
+          modelId: row.model_id,
+          createdAt: row.created_at,
+          batchId: row.batch_id || row.id,
+          settings: row.settings || undefined,
+        }));
+        setGeneratedItems(prev => [...prev, ...mapped]); // Append older items to end
+        setHasMoreHistory(data.length === 50);
+      }
+    } catch (err) {
+      console.error('[HISTORY] Failed to load more:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?.id, loadingMore, hasMoreHistory, generatedItems]);
 
   // Fetch credit balance on mount and after generation
   const fetchCredits = useCallback(async () => {
@@ -312,6 +352,7 @@ export default function GeneratePage() {
       if (newItems.length > 0) {
         console.log('[POLL] Adding', newItems.length, 'new items');
         setGeneratedItems(prev => [...newItems, ...prev]);
+        fetchCredits(); // Refresh credit balance after async generation
       }
 
       // Check if we should stop polling
@@ -325,7 +366,7 @@ export default function GeneratePage() {
     } finally {
       isPollingRef.current = false;
     }
-  }, [updatePendingJobs]);
+  }, [updatePendingJobs, fetchCredits]);
 
   // Start polling when pending count changes
   useEffect(() => {
@@ -576,6 +617,9 @@ export default function GeneratePage() {
           isGenerating={isGenerating}
           generatedItems={generatedItems}
           pendingCount={pendingCount}
+          onLoadMore={loadMoreHistory}
+          hasMoreHistory={hasMoreHistory}
+          loadingMore={loadingMore}
         />
         <PromptBar
           prompt={prompt}

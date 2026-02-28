@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
     Play,
     Download,
@@ -18,6 +18,9 @@ interface PreviewAreaProps {
     isGenerating?: boolean;
     generatedItems?: GeneratedItem[];
     pendingCount?: number;
+    onLoadMore?: () => void;
+    hasMoreHistory?: boolean;
+    loadingMore?: boolean;
 }
 
 // Group items by batchId, preserving order of first appearance
@@ -37,11 +40,61 @@ function groupByBatch(items: GeneratedItem[]): { batchId: string; items: Generat
     return batchOrder.map(bid => ({ batchId: bid, items: batchMap.get(bid)! }));
 }
 
-export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 0 }: PreviewAreaProps) {
+export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 0, onLoadMore, hasMoreHistory, loadingMore }: PreviewAreaProps) {
     const hasContent = generatedItems.length > 0 || isGenerating;
     const [selectedItem, setSelectedItem] = useState<GeneratedItem | null>(null);
     // Track muted state per video by item id
     const [mutedMap, setMutedMap] = useState<Record<string, boolean>>({});
+
+    // Scroll refs for auto-scroll to bottom + infinite scroll at top
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const hasInitialScrollRef = useRef(false);
+    const prevItemCountRef = useRef(0);
+
+    // Auto-scroll to bottom on initial load (so user sees newest generation)
+    useEffect(() => {
+        if (generatedItems.length > 0 && !hasInitialScrollRef.current && scrollContainerRef.current) {
+            // Wait for images to start rendering
+            setTimeout(() => {
+                if (scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+                }
+                hasInitialScrollRef.current = true;
+            }, 150);
+        }
+    }, [generatedItems.length]);
+
+    // Smooth scroll to bottom when NEW items are added (not initial load or load-more)
+    useEffect(() => {
+        const prevCount = prevItemCountRef.current;
+        const currentCount = generatedItems.length;
+        prevItemCountRef.current = currentCount;
+
+        // Only smooth-scroll for new generations (count increased from non-zero), not initial load
+        if (prevCount > 0 && currentCount > prevCount && hasInitialScrollRef.current && scrollContainerRef.current) {
+            setTimeout(() => {
+                scrollContainerRef.current?.scrollTo({
+                    top: scrollContainerRef.current.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+    }, [generatedItems.length]);
+
+    // Infinite scroll: load more when user scrolls near top
+    const handleScroll = useCallback(() => {
+        if (!scrollContainerRef.current || !onLoadMore || !hasMoreHistory || loadingMore) return;
+        if (scrollContainerRef.current.scrollTop < 200) {
+            onLoadMore();
+        }
+    }, [onLoadMore, hasMoreHistory, loadingMore]);
+
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', handleScroll);
+        return () => el.removeEventListener('scroll', handleScroll);
+    }, [handleScroll]);
 
     // Group by batch and reverse so oldest batches are at top, newest at bottom
     const batches = groupByBatch([...generatedItems].reverse());
@@ -53,7 +106,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
     };
 
     return (
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-thin p-6">
             {/* Top Toolbar */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -83,6 +136,14 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
             {/* Generated Content — Each batch is a row, images side-by-side */}
             {hasContent && (
                 <div className="flex flex-col gap-6 pb-40">
+
+                    {/* Loading indicator for older generations */}
+                    {loadingMore && (
+                        <div className="text-center py-4">
+                            <RefreshCw className="w-4 h-4 animate-spin text-gray-500 mx-auto mb-1" />
+                            <span className="text-gray-600 text-xs">Loading older generations...</span>
+                        </div>
+                    )}
 
                     {batches.map((batch) => (
                         <div key={batch.batchId} className="space-y-2">
