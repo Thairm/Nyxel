@@ -7,8 +7,8 @@
  */
 export const MODEL_COSTS: Record<number, { type: 'gems' | 'crystals'; cost: number }> = {
     // Atlas Cloud Image Models — Gems
-    1: { type: 'gems', cost: 100 },   // Nano Banana Pro
-    15: { type: 'gems', cost: 100 },   // Wan 2.6 Text-to-Image
+    1: { type: 'gems', cost: 150 },   // Nano Banana Pro (150 for 1k/2k, 300 for 4k — overridden in backend)
+    15: { type: 'gems', cost: 30 },    // Wan 2.6 Text-to-Image
     16: { type: 'gems', cost: 100 },   // Wan 2.6 Image Edit
 
     // CivitAI Image Models — Crystals

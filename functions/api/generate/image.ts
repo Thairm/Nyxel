@@ -132,6 +132,14 @@ export async function onRequestPost(context: any) {
         const body = await request.json();
         const { modelId, prompt, params, userId, quantity, freeCreation } = body;
 
+        // Auth guard — require a signed-in user
+        if (!userId) {
+            return new Response(JSON.stringify({ error: "Authentication required. Please sign in to generate images." }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+
         if (!prompt) {
             return new Response(JSON.stringify({ error: "Prompt is required" }), {
                 status: 400,
@@ -141,13 +149,17 @@ export async function onRequestPost(context: any) {
 
         // ============================================
         // Credit Check ONLY (no deduction yet — deduct after success)
-        // Free Creation bypasses crystal cost for Pro/Ultra on CivitAI models.
+        // Free Creation bypasses crystal cost for Pro/Ultra on eligible illustrious models.
         // ============================================
+
+        // Models eligible for Free Creation (not Atlas Cloud, not Z Image Base)
+        const FREE_GENERATION_MODEL_IDS = new Set([7, 9, 10, 11, 12, 13, 14]);
+
         let creditCost: { type: 'gems' | 'crystals'; cost: number } | null = null;
-        if (userId && env.SUPABASE_SERVICE_KEY) {
-            // Free Creation guard: Pro/Ultra only, CivitAI models only
+        if (env.SUPABASE_SERVICE_KEY) {
+            // Free Creation guard: Pro/Ultra only, eligible illustrious models only
             let skipCreditCheck = false;
-            if (freeCreation && isCivitaiModel(modelId)) {
+            if (freeCreation && isCivitaiModel(modelId) && FREE_GENERATION_MODEL_IDS.has(modelId)) {
                 const supabase = getSupabaseServer(env.SUPABASE_SERVICE_KEY);
                 const { data: sub } = await supabase
                     .from('user_subscriptions')
@@ -169,7 +181,11 @@ export async function onRequestPost(context: any) {
             }
 
             if (!skipCreditCheck) {
-                const costInfo = getImageCost(modelId);
+                // Nano Banana Pro: resolution-based cost (150 gems for 1k/2k, 300 for 4k)
+                const costInfo = modelId === 1
+                    ? { type: 'gems' as const, cost: (params?.resolution || '1k') === '4k' ? 300 : 150 }
+                    : getImageCost(modelId);
+
                 if (costInfo) {
                     const totalCost = isCivitaiModel(modelId)
                         ? costInfo.cost * Math.min(quantity || 1, 4)
@@ -304,7 +320,7 @@ export async function onRequestPost(context: any) {
                 body: JSON.stringify({
                     model: "alibaba/wan-2.6/text-to-image",
                     prompt: prompt,
-                    size: ratioToWanSize(params?.ratio || params?.aspect_ratio || "1:1"),
+                    size: params?.size || '1280*720',
                     negative_prompt: params?.negativePrompt || undefined,
                     seed: params?.seed ?? -1,
                     enable_sync_mode: true,

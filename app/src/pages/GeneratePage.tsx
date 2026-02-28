@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Image,
   FileText,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { SettingsPanel } from '@/components/generate/SettingsPanel';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
@@ -65,7 +65,25 @@ interface PendingJob {
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_ERRORS = 10;
 
+// Frontend cost map (mirrors backend MODEL_COSTS in functions/lib/credit-costs.ts)
+const GENERATION_COSTS: Record<number, { type: 'gems' | 'crystals'; cost: number }> = {
+  1: { type: 'gems', cost: 150 },     // Nano Banana Pro (150 for 1k/2k, 300 for 4k)
+  15: { type: 'gems', cost: 30 },     // Wan 2.6 Text-to-Image
+  16: { type: 'gems', cost: 100 },    // Wan 2.6 Image Edit
+  6: { type: 'crystals', cost: 20 },  // Z Image Base
+  7: { type: 'crystals', cost: 10 },  // WAI-illustrious-SDXL
+  9: { type: 'crystals', cost: 10 },  // Hassaku XL Illustrious
+  10: { type: 'crystals', cost: 10 }, // Prefect Illustrious XL
+  11: { type: 'crystals', cost: 10 }, // NoobAI XL
+  12: { type: 'crystals', cost: 10 }, // Illustrious XL
+  13: { type: 'crystals', cost: 10 }, // Indigo Void Furry Fused XL
+  14: { type: 'crystals', cost: 10 }, // BoytakuDream merge
+};
+const CIVITAI_IDS = new Set([6, 7, 9, 10, 11, 12, 13, 14]);
+const FREE_ELIGIBLE_IDS = new Set([7, 9, 10, 11, 12, 13, 14]);
+
 export default function GeneratePage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { currentTier } = usePromoStatus();
   const canUseFreeCreation = currentTier === 'pro' || currentTier === 'ultra';
@@ -74,7 +92,6 @@ export default function GeneratePage() {
   const [imageQuantity, setImageQuantity] = useState(4);
   const [videoResolution, setVideoResolution] = useState('1080p');
   const [videoDuration, setVideoDuration] = useState(5);
-  const [privateCreation, setPrivateCreation] = useState(false);
   const [freeCreation, setFreeCreation] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -107,6 +124,19 @@ export default function GeneratePage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(
     selectedModel.defaultVariant
   );
+
+  // Dynamic cost label for the Generate button
+  const generationCost = useMemo(() => {
+    if (freeCreation && canUseFreeCreation && FREE_ELIGIBLE_IDS.has(selectedModel.id)) {
+      return { type: 'free' as const, cost: 0, label: 'Free ✨' };
+    }
+    const base = GENERATION_COSTS[selectedModel.id];
+    if (!base) return null;
+    const unitCost = selectedModel.id === 1 && videoResolution === '4k' ? 300 : base.cost;
+    const total = CIVITAI_IDS.has(selectedModel.id) ? unitCost * imageQuantity : unitCost;
+    const emoji = base.type === 'gems' ? '💎' : '💜';
+    return { type: base.type, cost: total, label: `${total} ${emoji}` };
+  }, [selectedModel.id, videoResolution, imageQuantity, freeCreation, canUseFreeCreation]);
 
   // Generated items (completed) — newest first
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
@@ -322,6 +352,10 @@ export default function GeneratePage() {
   }, []);
 
   const handleGenerate = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
     if (!prompt.trim() || isGenerating) return;
 
     setIsGenerating(true);
@@ -504,8 +538,6 @@ export default function GeneratePage() {
         setVideoResolution={setVideoResolution}
         videoDuration={videoDuration}
         setVideoDuration={setVideoDuration}
-        privateCreation={privateCreation}
-        setPrivateCreation={setPrivateCreation}
         freeCreation={freeCreation}
         setFreeCreation={setFreeCreation}
         canUseFreeCreation={canUseFreeCreation}
@@ -553,6 +585,7 @@ export default function GeneratePage() {
           showNegativePrompt={!!getEffectiveParams(selectedModel, selectedVariantId).negativePrompt}
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
+          costLabel={generationCost?.label || ''}
         />
       </main>
 

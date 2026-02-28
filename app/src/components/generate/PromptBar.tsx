@@ -8,6 +8,7 @@ interface PromptBarProps {
     showNegativePrompt: boolean;
     onGenerate: () => void;
     isGenerating?: boolean;
+    costLabel?: string;
 }
 
 export function PromptBar({
@@ -18,6 +19,7 @@ export function PromptBar({
     showNegativePrompt,
     onGenerate,
     isGenerating,
+    costLabel,
 }: PromptBarProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [activeTab, setActiveTab] = useState<'positive' | 'negative'>('positive');
@@ -86,7 +88,12 @@ export function PromptBar({
                         disabled={isGenerating || !prompt.trim()}
                         className="px-6 py-2.5 bg-gradient-emerald text-white rounded-full font-bold text-sm hover:opacity-90 hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isGenerating ? 'Generating...' : 'Generate'}
+                        {isGenerating ? 'Generating...' : (
+                            <>
+                                Generate
+                                {costLabel && <span className="ml-1 opacity-80 text-xs font-normal">· {costLabel}</span>}
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

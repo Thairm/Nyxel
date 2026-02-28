@@ -89,7 +89,7 @@ export default function LandingPage() {
                             <>
                                 <Link to="/auth" className="hidden sm:block text-sm text-gray-300 hover:text-white transition-colors">Sign In</Link>
                                 <Link
-                                    to="/auth"
+                                    to="/home"
                                     className="bg-yellow-400 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-yellow-300 transition-colors"
                                 >
                                     Get Started

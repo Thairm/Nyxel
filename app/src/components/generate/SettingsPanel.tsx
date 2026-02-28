@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Grid3X3,
     ChevronDown,
@@ -27,6 +27,9 @@ const aspectRatios = [
     { id: '21:9', label: '21:9', width: 55, height: 24, pixels: '1536 × 640' },
 ];
 
+// CivitAI illustration models — 21:9 not supported, Free Creation eligible
+const ILLUSTRIOUS_MODEL_IDS = new Set([7, 9, 10, 11, 12, 13, 14]);
+
 // CivitAI scheduler options
 const schedulerOptions = [
     'EulerA', 'Euler', 'LMS', 'Heun', 'DPM2', 'DPM2A',
@@ -44,8 +47,6 @@ interface SettingsPanelProps {
     setVideoResolution: (res: string) => void;
     videoDuration: number;
     setVideoDuration: (dur: number) => void;
-    privateCreation: boolean;
-    setPrivateCreation: (val: boolean) => void;
     freeCreation: boolean;
     setFreeCreation: (val: boolean) => void;
     canUseFreeCreation: boolean;
@@ -93,8 +94,6 @@ export function SettingsPanel({
     setVideoResolution,
     videoDuration,
     setVideoDuration,
-    privateCreation,
-    setPrivateCreation,
     freeCreation,
     setFreeCreation,
     canUseFreeCreation,
@@ -129,6 +128,28 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
     // Model selection modal state
     const [showModelModal, setShowModelModal] = useState(false);
+
+    // Aspect ratios available for current model (illustrious models don't support 21:9)
+    const availableRatios = ILLUSTRIOUS_MODEL_IDS.has(selectedModel.id)
+        ? aspectRatios.filter(r => r.id !== '21:9')
+        : aspectRatios;
+
+    // Reset ratio to 2:3 if current model doesn't support 21:9
+    useEffect(() => {
+        if (ILLUSTRIOUS_MODEL_IDS.has(selectedModel.id) && selectedRatio === '21:9') {
+            setSelectedRatio('2:3');
+        }
+    }, [selectedModel.id, selectedRatio, setSelectedRatio]);
+
+    // Free Creation: requires Pro/Ultra AND an eligible illustrious model
+    const freeCreationAvailable = canUseFreeCreation && ILLUSTRIOUS_MODEL_IDS.has(selectedModel.id);
+
+    // Auto-disable freeCreation when switching to a non-eligible model
+    useEffect(() => {
+        if (!ILLUSTRIOUS_MODEL_IDS.has(selectedModel.id) && freeCreation) {
+            setFreeCreation(false);
+        }
+    }, [selectedModel.id, freeCreation, setFreeCreation]);
 
     // Get current variant info
     const currentVariant = hasVariants(selectedModel) && selectedVariantId
@@ -301,7 +322,7 @@ export function SettingsPanel({
                                         )}
                                     </div>
                                     <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
-                                        {aspectRatios.map((ratio) => (
+                                        {availableRatios.map((ratio) => (
                                             <button
                                                 key={ratio.id}
                                                 onClick={() => setSelectedRatio(ratio.id)}
@@ -416,36 +437,22 @@ export function SettingsPanel({
                                 </div>
                             )}
 
-                            {/* Private Creation Toggle */}
+                            {/* Free Creation Toggle — Pro/Ultra + eligible models only */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1">
-                                    <span className="text-gray-400 text-xs">Private Creation</span>
-                                    <Zap className="w-3 h-3 text-amber-400" />
-                                    <Info className="w-3 h-3 text-gray-600" />
-                                </div>
-                                <Switch
-                                    checked={privateCreation}
-                                    onCheckedChange={setPrivateCreation}
-                                    className="data-[state=checked]:bg-emerald-500"
-                                />
-                            </div>
-
-                            {/* Free Creation Toggle — Pro/Ultra only */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1">
-                                    <span className={`text-xs ${canUseFreeCreation ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    <span className={`text-xs ${freeCreationAvailable ? 'text-gray-400' : 'text-gray-600'}`}>
                                         Free Creation
                                     </span>
-                                    {canUseFreeCreation
+                                    {freeCreationAvailable
                                         ? <Zap className="w-3 h-3 text-amber-400" />
-                                        : <span title="Upgrade to Pro or Ultra"><Lock className="w-3 h-3 text-gray-600" /></span>
+                                        : <span title="Pro/Ultra only, for illustration models"><Lock className="w-3 h-3 text-gray-600" /></span>
                                     }
                                     <Info className="w-3 h-3 text-gray-600" />
                                 </div>
                                 <Switch
-                                    checked={canUseFreeCreation && freeCreation}
-                                    onCheckedChange={canUseFreeCreation ? setFreeCreation : undefined}
-                                    disabled={!canUseFreeCreation}
+                                    checked={freeCreationAvailable && freeCreation}
+                                    onCheckedChange={freeCreationAvailable ? setFreeCreation : undefined}
+                                    disabled={!freeCreationAvailable}
                                     className="data-[state=checked]:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed"
                                 />
                             </div>

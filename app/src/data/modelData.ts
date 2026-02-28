@@ -103,7 +103,7 @@ export const imageModels: Model[] = [
         rating: 4.7,
         description: 'Alibaba\'s advanced text-to-image model with multiple artistic styles',
         supportedParams: {
-            aspectRatio: true,
+            size: { options: ['720*1280', '1024*768', '1024*1024', '1080*1920', '1200*800', '1280*720', '1280*1280'], default: '1280*720' },
             negativePrompt: true,
             seed: true,
         },
