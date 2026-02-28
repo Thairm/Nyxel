@@ -98,7 +98,7 @@ export const imageModels: Model[] = [
         version: 'v2.6',
         type: 'image',
         category: 'Image Generation',
-        image: '/model-wan26-t2i.jpg',
+        image: '/model-2.jpg',
         badge: 'NEW',
         rating: 4.7,
         description: 'Alibaba\'s advanced text-to-image model with multiple artistic styles',
@@ -640,18 +640,23 @@ export function getVariantById(model: Model, variantId: string): ModelVariant | 
     return model.variants?.find(v => v.id === variantId);
 }
 
+// Models hidden at launch (video models + image edit — not offered yet)
+const HIDDEN_AT_LAUNCH = new Set([2, 3, 4, 5, 8, 16]);
+
 // Helper to format models for Hub page display
 export function getHubModels() {
-    return allModels.map(model => ({
-        id: model.id,
-        name: model.name,
-        type: model.category,
-        rating: model.rating || 0,
-        image: model.image,
-        badge: model.badge || '',
-        free: model.free || false,
-        description: model.description || ''
-    }));
+    return allModels
+        .filter(model => !HIDDEN_AT_LAUNCH.has(model.id))
+        .map(model => ({
+            id: model.id,
+            name: model.name,
+            type: model.category,
+            rating: model.rating || 0,
+            image: model.image,
+            badge: model.badge || '',
+            free: model.free || false,
+            description: model.description || ''
+        }));
 }
 
 // Helper to check if model supports image input

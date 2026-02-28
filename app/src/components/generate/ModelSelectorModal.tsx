@@ -17,7 +17,7 @@ export function ModelSelectorModal({
 }: ModelSelectorModalProps) {
     if (!isOpen) return null;
 
-    const models = imageModels;
+    const models = imageModels.filter(m => m.id !== 16);
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
