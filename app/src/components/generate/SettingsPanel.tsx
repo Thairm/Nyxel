@@ -38,7 +38,6 @@ const schedulerOptions = [
 ];
 
 interface SettingsPanelProps {
-    mode: string;
     selectedRatio: string;
     setSelectedRatio: (ratio: string) => void;
     imageQuantity: number;
@@ -88,7 +87,6 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({
-    mode,
     selectedRatio,
     setSelectedRatio,
     imageQuantity,
@@ -131,8 +129,6 @@ export function SettingsPanel({
     lastImage,
     setLastImage,
 }: SettingsPanelProps) {
-    const isVideoMode = mode === 'video';
-
     // Model selection modal state
     const [showModelModal, setShowModelModal] = useState(false);
 
@@ -261,7 +257,6 @@ export function SettingsPanel({
                 isOpen={showModelModal}
                 onClose={() => setShowModelModal(false)}
                 onSelect={handleModelSelect}
-                initialMode={isVideoMode ? 'video' : 'image'}
                 selectedModelId={selectedModel.id}
                 selectedVariantId={selectedVariantId}
             />
@@ -304,7 +299,7 @@ export function SettingsPanel({
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-gray-400 text-xs">
-                                            {isVideoMode ? 'Aspect Ratio' : 'Image Settings'}
+                                            Image Settings
                                         </span>
                                         {params.widthHeight && (
                                             <span className="text-gray-600 text-xs">
@@ -408,7 +403,7 @@ export function SettingsPanel({
                             )}
 
                             {/* Image Quantity (CivitAI) */}
-                            {params.quantity && !isVideoMode && (
+                            {params.quantity && (
                                 <div>
                                     <span className="text-gray-400 text-xs block mb-2">Image Quantity</span>
                                     <div className="flex gap-2">

@@ -475,6 +475,18 @@ export default function GeneratePage() {
             );
           })}
         </nav>
+        {/* Tier Badge */}
+        <Link to="/pricing" className="w-full flex flex-col items-center gap-0.5 py-2 mb-1" title={`${(currentTier ?? 'free').charAt(0).toUpperCase() + (currentTier ?? 'free').slice(1)} Plan`}>
+          <div className={`px-1.5 h-3.5 rounded-full flex items-center justify-center ${
+            { free: 'bg-gray-500/20', starter: 'bg-orange-500/20', standard: 'bg-blue-500/20', pro: 'bg-emerald-500/20', ultra: 'bg-purple-500/20' }[currentTier ?? 'free'] ?? 'bg-gray-500/20'
+          }`}>
+            <span className={`text-[7px] font-bold uppercase ${
+              { free: 'text-gray-400', starter: 'text-orange-400', standard: 'text-blue-400', pro: 'text-emerald-400', ultra: 'text-purple-400' }[currentTier ?? 'free'] ?? 'text-gray-400'
+            }`}>
+              {currentTier ?? 'free'}
+            </span>
+          </div>
+        </Link>
         <div className="flex flex-col gap-2 w-full px-1">
           <Link to="/pricing" className="w-full flex flex-col items-center gap-0.5 py-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all" title={`${gems} Gems`}>
             <div className="w-5 h-5 rounded-full bg-yellow-400/20 flex items-center justify-center">
@@ -492,7 +504,6 @@ export default function GeneratePage() {
       </aside>
 
       <SettingsPanel
-        mode="image"
         selectedRatio={selectedRatio}
         setSelectedRatio={setSelectedRatio}
         imageQuantity={imageQuantity}

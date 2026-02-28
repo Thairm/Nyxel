@@ -20,11 +20,11 @@ const featureCards = [
         path: '/generate/image'
     },
     {
-        title: 'Video Generation',
-        subtitle: 'Creative Vision, One-Click Creation',
+        title: 'Unlimited Generation',
+        subtitle: 'Free Creation for Pro & Ultra',
         image: '/feature-video-gen.jpg',
         gradient: 'from-amber-500/20 to-orange-500/20',
-        path: '/generate/video'
+        path: '/pricing'
     },
     {
         title: 'AI Characters',
