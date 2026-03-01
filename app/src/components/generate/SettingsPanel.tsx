@@ -27,21 +27,6 @@ const aspectRatios = [
     { id: '21:9', label: '21:9', width: 55, height: 24, pixels: '1536 × 640' },
 ];
 
-// Actual pixel dimensions for SD1.5 models (Z Image Base, model ID 6)
-// SD1.5 was trained at 512×512 — CivitAI rejects larger dimensions
-const SD15_PIXELS: Record<string, string> = {
-    '1:1':  '512 × 512',
-    '2:3':  '340 × 512',
-    '3:2':  '512 × 340',
-    '3:4':  '384 × 512',
-    '4:3':  '512 × 384',
-    '4:5':  '408 × 512',
-    '5:4':  '512 × 408',
-    '9:16': '288 × 512',
-    '16:9': '512 × 288',
-    '21:9': '512 × 220',
-};
-
 // CivitAI illustration models — 21:9 not supported, Free Creation eligible
 const ILLUSTRIOUS_MODEL_IDS = new Set([7, 9, 10, 11, 12, 13, 14]);
 
@@ -148,12 +133,6 @@ export function SettingsPanel({
     const availableRatios = ILLUSTRIOUS_MODEL_IDS.has(selectedModel.id)
         ? aspectRatios.filter(r => r.id !== '21:9')
         : aspectRatios;
-
-    // SD1.5 vs SDXL pixel dimensions for the selected ratio
-    const isSD15Model = selectedModel.id === 6;
-    const currentPixels = isSD15Model
-        ? (SD15_PIXELS[selectedRatio] || '512 × 512')
-        : (aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024');
 
     // Reset ratio to 2:3 if current model doesn't support 21:9
     useEffect(() => {
@@ -338,7 +317,7 @@ export function SettingsPanel({
                                         </span>
                                         {params.widthHeight && (
                                             <span className="text-gray-600 text-xs">
-                                                {currentPixels}
+                                                {aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024'}
                                             </span>
                                         )}
                                     </div>

@@ -37,24 +37,6 @@ function ratioToSDXLDimensions(ratio: string): { width: number; height: number }
     return dimensionMap[ratio] || { width: 1024, height: 1024 };
 }
 
-// Helper: Map frontend aspect ratio to SD1.5 pixel dimensions (max 512px per side)
-// SD1.5 was trained at 512×512 — CivitAI rejects/refunds jobs with larger dimensions.
-function ratioToSD15Dimensions(ratio: string): { width: number; height: number } {
-    const dimensionMap: Record<string, { width: number; height: number }> = {
-        '1:1':  { width: 512, height: 512 },
-        '2:3':  { width: 340, height: 512 },
-        '3:2':  { width: 512, height: 340 },
-        '3:4':  { width: 384, height: 512 },
-        '4:3':  { width: 512, height: 384 },
-        '4:5':  { width: 408, height: 512 },
-        '5:4':  { width: 512, height: 408 },
-        '9:16': { width: 288, height: 512 },
-        '16:9': { width: 512, height: 288 },
-        '21:9': { width: 512, height: 220 },
-    };
-    return dimensionMap[ratio] || { width: 512, height: 512 };
-}
-
 /**
  * Generate a unique filename for B2 storage.
  */
@@ -516,10 +498,10 @@ export async function onRequestPost(context: any) {
 
             try {
                 // Resolve aspect ratio to pixel dimensions
-                // Model 6 (Z Image Base) is SD1.5 — uses 768px max; all others are SDXL (1024px)
+                // All CivitAI models use SDXL-scale dimensions (1024px base)
+                // Z Image Base (model 6) is Alibaba's 6B model — supports 512-2048px natively
                 const ratio = params?.ratio || params?.aspect_ratio || '1:1';
-                const isSD15Model = modelId === 6;
-                const dimensions = isSD15Model ? ratioToSD15Dimensions(ratio) : ratioToSDXLDimensions(ratio);
+                const dimensions = ratioToSDXLDimensions(ratio);
                 const imageQuantity = Math.min(Math.max(quantity || 1, 1), 4); // 1-4 images
 
                 console.log('[CIVITAI] Generating', imageQuantity, 'images at', dimensions.width, 'x', dimensions.height, 'ratio:', ratio);
