@@ -239,7 +239,24 @@ export async function onRequestGet(context: any) {
                 return results.length > 0 && results.every((r: any) => r.available === true);
             });
 
-            console.log('[STATUS] allCompleted:', allCompleted, 'jobCount:', jobs.length);
+            // Check for jobs that have explicitly failed (error field, failed flag, or null result)
+            const hasFailed = jobs.some((j: any) => {
+                const hasError = j.error !== undefined || j.failed === true;
+                const resultIsNull = j.result === null;
+                const results = Array.isArray(j.result) ? j.result : (j.result ? [j.result] : []);
+                const hasErrorInResult = results.some((r: any) => r.error !== undefined || r.failed === true);
+                return hasError || resultIsNull || hasErrorInResult;
+            });
+
+            console.log('[STATUS] allCompleted:', allCompleted, 'hasFailed:', hasFailed, 'jobCount:', jobs.length);
+
+            if (hasFailed) {
+                return new Response(JSON.stringify({
+                    status: 'failed',
+                    error: 'CivitAI generation failed. Credits were not deducted.',
+                    provider: 'civitai',
+                }), { headers: { "Content-Type": "application/json" } });
+            }
 
             // Not done yet — keep polling
             if (!allCompleted) {
@@ -269,7 +286,13 @@ export async function onRequestGet(context: any) {
                     if (!blobUrl) continue;
 
                     const fileName = generateFileName(userId || 'anonymous', 'image');
-                    const permanentUrl = await downloadAndUploadToB2(env, blobUrl, fileName, 'image/png');
+                    let permanentUrl: string;
+                    try {
+                        permanentUrl = await downloadAndUploadToB2(env, blobUrl, fileName, 'image/png');
+                    } catch (uploadErr: any) {
+                        console.error('[STATUS] B2 upload failed for blobUrl:', blobUrl, uploadErr.message);
+                        continue; // Skip this image, try others in the batch
+                    }
 
                     let generationId = null;
                     if (userId && env.SUPABASE_SERVICE_KEY) {

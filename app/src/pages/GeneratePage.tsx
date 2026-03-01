@@ -331,6 +331,7 @@ export default function GeneratePage() {
           } else if (data.status === 'failed') {
             failedIds.push(job.id);
             console.error('[POLL] Generation failed:', data.error);
+            alert('⚠️ Generation failed: ' + (data.error || 'Unknown error. No credits were deducted.'));
           }
           // 'processing' — keep polling
         } catch (err) {

@@ -37,6 +37,25 @@ function ratioToSDXLDimensions(ratio: string): { width: number; height: number }
     return dimensionMap[ratio] || { width: 1024, height: 1024 };
 }
 
+// Helper: Map frontend aspect ratio to SD1.5 pixel dimensions (max 768px per side)
+// SD1.5 models (e.g. Z Image Base) cannot handle SDXL 1024px dimensions —
+// CivitAI accepts the job but the generation fails silently during processing.
+function ratioToSD15Dimensions(ratio: string): { width: number; height: number } {
+    const dimensionMap: Record<string, { width: number; height: number }> = {
+        '1:1':  { width: 768, height: 768 },
+        '2:3':  { width: 512, height: 768 },
+        '3:2':  { width: 768, height: 512 },
+        '3:4':  { width: 576, height: 768 },
+        '4:3':  { width: 768, height: 576 },
+        '4:5':  { width: 616, height: 768 },
+        '5:4':  { width: 768, height: 616 },
+        '9:16': { width: 432, height: 768 },
+        '16:9': { width: 768, height: 432 },
+        '21:9': { width: 768, height: 328 },
+    };
+    return dimensionMap[ratio] || { width: 768, height: 768 };
+}
+
 /**
  * Generate a unique filename for B2 storage.
  */
@@ -497,9 +516,11 @@ export async function onRequestPost(context: any) {
             const civitai = getCivitaiClient(apiToken);
 
             try {
-                // Resolve aspect ratio to SDXL pixel dimensions
+                // Resolve aspect ratio to pixel dimensions
+                // Model 6 (Z Image Base) is SD1.5 — uses 768px max; all others are SDXL (1024px)
                 const ratio = params?.ratio || params?.aspect_ratio || '1:1';
-                const dimensions = ratioToSDXLDimensions(ratio);
+                const isSD15Model = modelId === 6;
+                const dimensions = isSD15Model ? ratioToSD15Dimensions(ratio) : ratioToSDXLDimensions(ratio);
                 const imageQuantity = Math.min(Math.max(quantity || 1, 1), 4); // 1-4 images
 
                 console.log('[CIVITAI] Generating', imageQuantity, 'images at', dimensions.width, 'x', dimensions.height, 'ratio:', ratio);
