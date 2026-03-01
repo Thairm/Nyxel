@@ -640,8 +640,8 @@ export function getVariantById(model: Model, variantId: string): ModelVariant | 
     return model.variants?.find(v => v.id === variantId);
 }
 
-// Models hidden at launch (video models + image edit — not offered yet)
-const HIDDEN_AT_LAUNCH = new Set([2, 3, 4, 5, 8, 16]);
+// Models hidden at launch (video models + image edit + Z Image Base not supported via CivitAI API)
+const HIDDEN_AT_LAUNCH = new Set([2, 3, 4, 5, 6, 8, 16]);
 
 // Helper to format models for Hub page display
 export function getHubModels() {
