@@ -37,23 +37,22 @@ function ratioToSDXLDimensions(ratio: string): { width: number; height: number }
     return dimensionMap[ratio] || { width: 1024, height: 1024 };
 }
 
-// Helper: Map frontend aspect ratio to SD1.5 pixel dimensions (max 768px per side)
-// SD1.5 models (e.g. Z Image Base) cannot handle SDXL 1024px dimensions —
-// CivitAI accepts the job but the generation fails silently during processing.
+// Helper: Map frontend aspect ratio to SD1.5 pixel dimensions (max 512px per side)
+// SD1.5 was trained at 512×512 — CivitAI rejects/refunds jobs with larger dimensions.
 function ratioToSD15Dimensions(ratio: string): { width: number; height: number } {
     const dimensionMap: Record<string, { width: number; height: number }> = {
-        '1:1':  { width: 768, height: 768 },
-        '2:3':  { width: 512, height: 768 },
-        '3:2':  { width: 768, height: 512 },
-        '3:4':  { width: 576, height: 768 },
-        '4:3':  { width: 768, height: 576 },
-        '4:5':  { width: 616, height: 768 },
-        '5:4':  { width: 768, height: 616 },
-        '9:16': { width: 432, height: 768 },
-        '16:9': { width: 768, height: 432 },
-        '21:9': { width: 768, height: 328 },
+        '1:1':  { width: 512, height: 512 },
+        '2:3':  { width: 340, height: 512 },
+        '3:2':  { width: 512, height: 340 },
+        '3:4':  { width: 384, height: 512 },
+        '4:3':  { width: 512, height: 384 },
+        '4:5':  { width: 408, height: 512 },
+        '5:4':  { width: 512, height: 408 },
+        '9:16': { width: 288, height: 512 },
+        '16:9': { width: 512, height: 288 },
+        '21:9': { width: 512, height: 220 },
     };
-    return dimensionMap[ratio] || { width: 768, height: 768 };
+    return dimensionMap[ratio] || { width: 512, height: 512 };
 }
 
 /**

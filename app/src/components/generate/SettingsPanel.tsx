@@ -28,18 +28,18 @@ const aspectRatios = [
 ];
 
 // Actual pixel dimensions for SD1.5 models (Z Image Base, model ID 6)
-// SD1.5 generates at 768px max — different from SDXL 1024px shown in aspectRatios.pixels
+// SD1.5 was trained at 512×512 — CivitAI rejects larger dimensions
 const SD15_PIXELS: Record<string, string> = {
-    '1:1':  '768 × 768',
-    '2:3':  '512 × 768',
-    '3:2':  '768 × 512',
-    '3:4':  '576 × 768',
-    '4:3':  '768 × 576',
-    '4:5':  '616 × 768',
-    '5:4':  '768 × 616',
-    '9:16': '432 × 768',
-    '16:9': '768 × 432',
-    '21:9': '768 × 328',
+    '1:1':  '512 × 512',
+    '2:3':  '340 × 512',
+    '3:2':  '512 × 340',
+    '3:4':  '384 × 512',
+    '4:3':  '512 × 384',
+    '4:5':  '408 × 512',
+    '5:4':  '512 × 408',
+    '9:16': '288 × 512',
+    '16:9': '512 × 288',
+    '21:9': '512 × 220',
 };
 
 // CivitAI illustration models — 21:9 not supported, Free Creation eligible
@@ -152,7 +152,7 @@ export function SettingsPanel({
     // SD1.5 vs SDXL pixel dimensions for the selected ratio
     const isSD15Model = selectedModel.id === 6;
     const currentPixels = isSD15Model
-        ? (SD15_PIXELS[selectedRatio] || '768 × 768')
+        ? (SD15_PIXELS[selectedRatio] || '512 × 512')
         : (aspectRatios.find(r => r.id === selectedRatio)?.pixels || '1024 × 1024');
 
     // Reset ratio to 2:3 if current model doesn't support 21:9
