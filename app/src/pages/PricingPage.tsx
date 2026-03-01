@@ -4,15 +4,6 @@ import { Check, Sparkles, Gem, Diamond, Zap, Crown, ArrowLeft, Info, LogIn, LogO
 import { useAuth, usePromoStatus } from '../hooks/useAuth';
 import { TIER_ORDER } from '../lib/supabase';
 
-// Social media promo codes → payment link mapping
-// Add new codes here as needed
-const SOCIAL_PROMO_CODES: Record<string, string> = {
-    'STANDARD100': 'https://buy.stripe.com/14A14nfuna8w3QhdCA7g40c?prefilled_promo_code=STANDARD100qpwrpesmcvpogsak',
-    // Add more social promo codes here, e.g.:
-    // 'YOUTUBE100': 'https://buy.stripe.com/...',
-    // 'TWITTER100': 'https://buy.stripe.com/...',
-};
-
 interface TierLinks {
     default: string;
     promo: string;
@@ -138,46 +129,67 @@ export default function PricingPage() {
     const { promoUsed, currentTier, loading: promoLoading } = usePromoStatus();
     const [promoCode, setPromoCode] = useState('');
     const [promoError, setPromoError] = useState('');
+    const [promoTier, setPromoTier] = useState('standard');
     const [portalLoading, setPortalLoading] = useState(false);
 
     const isLoading = authLoading || promoLoading;
 
-    // Handle social promo code submission
+    // Handle promo code submission — works with any Stripe coupon code
     const handlePromoSubmit = () => {
-        const code = promoCode.trim().toUpperCase();
-        const link = SOCIAL_PROMO_CODES[code];
-        if (link) {
-            if (!user) {
-                localStorage.setItem('pendingPromoCode', code);
-                window.location.href = '/auth';
-                return;
-            }
-            setPromoError('');
-            // Append client_reference_id so webhook can match payment to user
-            const separator = link.includes('?') ? '&' : '?';
-            window.location.href = `${link}${separator}client_reference_id=${user.id}`;
-        } else {
-            setPromoError('Invalid promo code. Please check and try again.');
+        const code = promoCode.trim();
+        if (!code) {
+            setPromoError('Please enter a promo code.');
+            return;
         }
+        if (!user) {
+            localStorage.setItem('pendingPromoCode', code);
+            localStorage.setItem('pendingPromoTier', promoTier);
+            window.location.href = '/auth';
+            return;
+        }
+        const selectedTier = tiers.find(t => t.id === promoTier);
+        if (!selectedTier) {
+            setPromoError('Please select a valid plan.');
+            return;
+        }
+        setPromoError('');
+        // Build URL: default link + prefilled_promo_code + client_reference_id
+        const base = selectedTier.links.default;
+        const sep = base.includes('?') ? '&' : '?';
+        window.location.href = `${base}${sep}prefilled_promo_code=${encodeURIComponent(code)}&client_reference_id=${user.id}`;
     };
 
     // Determine which link to use for a tier
     const getLinkForTier = (tier: PricingTier) => {
         if (!user) return tier.links.promo; // Not logged in = show promo (they'll sign up first)
+        // Subscribed: only show promo for tiers ABOVE current
+        if (currentTier && (TIER_ORDER[tier.id] || 0) <= (TIER_ORDER[currentTier] || 0)) {
+            return tier.links.default;
+        }
         if (promoUsed[tier.id]) return tier.links.default; // Already used promo
         return tier.links.promo; // Eligible for promo
     };
 
-    // Check if this tier should be shown (hide lower tiers if user has higher plan)
-    const shouldShowTier = (tier: PricingTier) => {
-        if (!currentTier) return true;
-        return (TIER_ORDER[tier.id] || 0) > (TIER_ORDER[currentTier] || 0);
-    };
+    // Show all tiers regardless of current subscription
+    const shouldShowTier = (_tier: PricingTier) => true;
 
     // Check if promo is available for this tier
     const isPromoAvailable = (tier: PricingTier) => {
         if (!user) return true; // Assume new user
+        // Subscribed: promo only for tiers ABOVE current
+        if (currentTier && (TIER_ORDER[tier.id] || 0) <= (TIER_ORDER[currentTier] || 0)) {
+            return false;
+        }
         return !promoUsed[tier.id];
+    };
+
+    // Helper: is this the user's current tier?
+    const isCurrentTier = (tier: PricingTier) => currentTier === tier.id;
+
+    // Helper: is this tier lower than user's current tier?
+    const isLowerTier = (tier: PricingTier) => {
+        if (!currentTier) return false;
+        return (TIER_ORDER[tier.id] || 0) < (TIER_ORDER[currentTier] || 0);
     };
 
     // Handle subscribe click — appends client_reference_id for webhook matching
@@ -259,16 +271,18 @@ export default function PricingPage() {
                 </div>
             </nav>
 
-            {/* Promo Banner */}
-            <div className="bg-gradient-to-r from-yellow-400/20 via-yellow-400/10 to-yellow-400/20 border-b border-yellow-400/20">
-                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-center gap-3">
-                    <Tag className="w-4 h-4 text-yellow-400" />
-                    <p className="text-sm text-center">
-                        <span className="font-semibold text-yellow-400">🎉 Launch Special:</span>
-                        <span className="text-gray-300 ml-1">50% off your first month on all plans!</span>
-                    </p>
+            {/* Promo Banner — hide for Ultra users (no higher tier to upgrade to) */}
+            {(!currentTier || currentTier !== 'ultra') && (
+                <div className="bg-gradient-to-r from-yellow-400/20 via-yellow-400/10 to-yellow-400/20 border-b border-yellow-400/20">
+                    <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-center gap-3">
+                        <Tag className="w-4 h-4 text-yellow-400" />
+                        <p className="text-sm text-center">
+                            <span className="font-semibold text-yellow-400">🎉 Launch Special:</span>
+                            <span className="text-gray-300 ml-1">50% off your first month on all plans!</span>
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Hero */}
             <section className="pt-16 pb-8 px-6 relative">
@@ -330,7 +344,7 @@ export default function PricingPage() {
                             <h3 className="text-sm font-semibold">Have a promo code?</h3>
                         </div>
                         <p className="text-xs text-gray-500 mb-3">
-                            Enter your code to unlock exclusive offers
+                            Enter your code and select a plan
                         </p>
                         <input
                             type="text"
@@ -340,11 +354,22 @@ export default function PricingPage() {
                             placeholder="Enter promo code"
                             className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400/50 transition-colors mb-3"
                         />
+                        <select
+                            value={promoTier}
+                            onChange={(e) => setPromoTier(e.target.value)}
+                            className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-yellow-400/50 transition-colors mb-3 appearance-none"
+                        >
+                            {tiers.map(t => (
+                                <option key={t.id} value={t.id} className="bg-gray-900 text-white">
+                                    {t.name} — {t.price}/mo
+                                </option>
+                            ))}
+                        </select>
                         <button
                             onClick={handlePromoSubmit}
                             className="w-full bg-yellow-400 text-black py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-300 transition-colors cursor-pointer"
                         >
-                            Subscribe
+                            Apply & Subscribe
                         </button>
                         {promoError && (
                             <p className="text-red-400 text-xs mt-2 text-center">{promoError}</p>
@@ -359,20 +384,31 @@ export default function PricingPage() {
                             <Gift className="w-5 h-5 text-yellow-400" />
                             <h3 className="text-sm font-semibold">Have a promo code?</h3>
                         </div>
+                        <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                            onKeyDown={(e) => e.key === 'Enter' && handlePromoSubmit()}
+                            placeholder="Enter promo code"
+                            className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400/50 transition-colors mb-3"
+                        />
                         <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={promoCode}
-                                onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePromoSubmit()}
-                                placeholder="Enter promo code"
-                                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400/50 transition-colors"
-                            />
+                            <select
+                                value={promoTier}
+                                onChange={(e) => setPromoTier(e.target.value)}
+                                className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-yellow-400/50 transition-colors appearance-none"
+                            >
+                                {tiers.map(t => (
+                                    <option key={t.id} value={t.id} className="bg-gray-900 text-white">
+                                        {t.name} — {t.price}
+                                    </option>
+                                ))}
+                            </select>
                             <button
                                 onClick={handlePromoSubmit}
                                 className="bg-yellow-400 text-black px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-300 transition-colors cursor-pointer"
                             >
-                                Subscribe
+                                Apply
                             </button>
                         </div>
                         {promoError && (
@@ -395,7 +431,7 @@ export default function PricingPage() {
                                     <h3 className="text-lg font-semibold">Free Tier</h3>
                                 </div>
                                 <p className="text-sm text-gray-400">
-                                    100 Gems + 50 Crystals per month. Create an account to start.
+                                    50 Crystals per month. Create an account to start.
                                 </p>
                             </div>
                             <Link
@@ -411,27 +447,34 @@ export default function PricingPage() {
                     {isLoading ? (
                         <div className="text-center py-16 text-gray-500">Loading plans...</div>
                     ) : (
-                        <div className={`grid grid-cols-1 md:grid-cols-2 ${visibleTiers.length <= 2 ? 'max-w-3xl mx-auto' : 'lg:grid-cols-4'} gap-5`}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                             {visibleTiers.map((tier) => {
                                 const promoAvailable = isPromoAvailable(tier);
 
                                 return (
                                     <div
                                         key={tier.name}
-                                        className={`relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${tier.highlight
-                                            ? 'bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 border-2 border-yellow-400/40 shadow-[0_0_40px_-8px_rgba(250,204,21,0.2)]'
-                                            : 'bg-white/[0.03] border border-white/10 hover:border-white/20'
-                                            }`}
+                                        className={`relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${
+                                            isCurrentTier(tier)
+                                                ? 'bg-gradient-to-b from-emerald-400/15 to-emerald-400/5 border-2 border-emerald-400/40 shadow-[0_0_40px_-8px_rgba(52,211,153,0.2)]'
+                                                : tier.highlight
+                                                    ? 'bg-gradient-to-b from-yellow-400/15 to-yellow-400/5 border-2 border-yellow-400/40 shadow-[0_0_40px_-8px_rgba(250,204,21,0.2)]'
+                                                    : 'bg-white/[0.03] border border-white/10 hover:border-white/20'
+                                        }`}
                                     >
                                         {/* Badge */}
-                                        {tier.badge && (
+                                        {isCurrentTier(tier) ? (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-400 text-black">
+                                                Current Plan
+                                            </div>
+                                        ) : tier.badge ? (
                                             <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold ${tier.highlight
                                                 ? 'bg-yellow-400 text-black'
                                                 : 'bg-white/10 text-yellow-400 border border-yellow-400/30'
                                                 }`}>
                                                 {tier.badge}
                                             </div>
-                                        )}
+                                        ) : null}
 
                                         {/* Icon */}
                                         <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${tier.highlight
@@ -491,12 +534,25 @@ export default function PricingPage() {
                                         {/* CTA */}
                                         <button
                                             onClick={() => handleSubscribeClick(tier)}
-                                            className={`w-full py-3 rounded-full text-sm font-semibold transition-all cursor-pointer ${tier.highlight
-                                                ? 'bg-yellow-400 text-black hover:bg-yellow-300'
-                                                : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
-                                                }`}
+                                            disabled={isCurrentTier(tier)}
+                                            className={`w-full py-3 rounded-full text-sm font-semibold transition-all ${
+                                                isCurrentTier(tier)
+                                                    ? 'bg-emerald-400/20 text-emerald-400 border border-emerald-400/30 cursor-default'
+                                                    : isLowerTier(tier)
+                                                        ? 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10 cursor-pointer'
+                                                        : tier.highlight
+                                                            ? 'bg-yellow-400 text-black hover:bg-yellow-300 cursor-pointer'
+                                                            : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 cursor-pointer'
+                                            }`}
                                         >
-                                            {!user ? 'Sign Up & Subscribe' : 'Subscribe'}
+                                            {!user
+                                                ? 'Sign Up & Subscribe'
+                                                : isCurrentTier(tier)
+                                                    ? 'Current Plan'
+                                                    : isLowerTier(tier)
+                                                        ? 'Change Plan'
+                                                        : 'Upgrade'
+                                            }
                                         </button>
                                     </div>
                                 );
@@ -605,7 +661,7 @@ export default function PricingPage() {
                     >
                         Ready to create?
                     </h2>
-                    <p className="text-gray-400 mb-8">Start with 100 free Gems and 50 Crystals. No credit card required.</p>
+                    <p className="text-gray-400 mb-8">Start with 50 free Crystals. No credit card required.</p>
                     <Link
                         to={user ? '/home' : '/auth'}
                         className="inline-block bg-yellow-400 text-black px-8 py-4 rounded-full text-base font-semibold hover:bg-yellow-300 transition-all transform hover:scale-105"

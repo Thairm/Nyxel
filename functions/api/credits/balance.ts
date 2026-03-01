@@ -35,7 +35,7 @@ export async function onRequestGet(context: any) {
 
         if (error || !data) {
             // No credit record yet — return free tier defaults
-            return new Response(JSON.stringify({ gems: 100, crystals: 50 }), {
+            return new Response(JSON.stringify({ gems: 0, crystals: 50 }), {
                 headers: { 'Content-Type': 'application/json' },
             });
         }

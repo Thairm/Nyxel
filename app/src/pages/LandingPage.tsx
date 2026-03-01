@@ -281,7 +281,7 @@ export default function LandingPage() {
                                     <h3 className="text-lg font-semibold">Free Tier</h3>
                                 </div>
                                 <p className="text-sm text-gray-400">
-                                    100 Gems + 50 Crystals per month. Create an account to start.
+                                    50 Crystals per month. Create an account to start.
                                 </p>
                             </div>
                             <Link

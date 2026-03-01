@@ -41,7 +41,7 @@ export const VIDEO_MODEL_COSTS_PER_SEC: Record<number, number> = {
  * Monthly credit allocation per subscription tier.
  */
 export const TIER_CREDITS: Record<string, { gems: number; crystals: number }> = {
-    free: { gems: 100, crystals: 50 },
+    free: { gems: 0, crystals: 50 },
     starter: { gems: 1500, crystals: 500 },
     standard: { gems: 3000, crystals: 1000 },
     pro: { gems: 7000, crystals: 2000 },
