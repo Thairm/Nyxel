@@ -467,7 +467,7 @@ export default function GeneratePage() {
         </Link>
         <nav className="flex-1 flex flex-col gap-1 w-full px-1">
           {navItems.map((item) => {
-            const isActive = (isVideoMode && item.label === 'Video') || (!isVideoMode && item.label === 'Image');
+            const isActive = item.label === 'Image';
             return (
               <Link
                 key={item.label}

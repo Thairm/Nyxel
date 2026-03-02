@@ -3,7 +3,9 @@ import {
     Grid3X3,
     ChevronDown,
     Zap,
-    Lock
+    Lock,
+    Info,
+    LayoutTemplate
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -20,8 +22,8 @@ const aspectRatios = [
     { id: '3:2', label: '3:2', width: 48, height: 32, pixels: '1216 × 832' },
     { id: '3:4', label: '3:4', width: 36, height: 48, pixels: '896 × 1152' },
     { id: '4:3', label: '4:3', width: 48, height: 36, pixels: '1152 × 896' },
-    { id: '4:5', label: '4:5', width: 38, height: 48, pixels: '960 × 1200' },
-    { id: '5:4', label: '5:4', width: 48, height: 38, pixels: '1200 × 960' },
+    { id: '4:5', label: '4:5', width: 38, height: 48, pixels: '1024 × 1280' },
+    { id: '5:4', label: '5:4', width: 48, height: 38, pixels: '1280 × 1024' },
     { id: '9:16', label: '9:16', width: 28, height: 50, pixels: '768 × 1344' },
     { id: '16:9', label: '16:9', width: 50, height: 28, pixels: '1344 × 768' },
     { id: '21:9', label: '21:9', width: 55, height: 24, pixels: '1536 × 640' },
