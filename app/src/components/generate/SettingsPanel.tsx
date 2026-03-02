@@ -4,8 +4,7 @@ import {
     ChevronDown,
     Zap,
     Info,
-    Lock,
-    LayoutTemplate
+    Lock
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { hasVariants, getVariantById, getEffectiveParams } from '@/data/modelData';
