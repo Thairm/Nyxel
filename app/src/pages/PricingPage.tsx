@@ -43,7 +43,6 @@ const tiers: PricingTier[] = [
             '1,500 Gems / month',
             '500 Crystals / month',
             'Crystal fast-pass queue',
-            'Priority support',
         ],
         links: {
             default: 'https://buy.stripe.com/9B69AT1Dx1C0gD3eGE7g404',
@@ -65,7 +64,6 @@ const tiers: PricingTier[] = [
             'Everything in Starter',
             '3,000 Gems / month',
             '1,000 Crystals / month',
-            'Free community generation',
             'Crystal fast-pass queue',
         ],
         links: {
@@ -88,7 +86,7 @@ const tiers: PricingTier[] = [
             '7,000 Gems / month',
             '2,000 Crystals / month',
             'More Gems per dollar',
-            'Free community generation',
+            'Unlimited Generation for certain models',
         ],
         links: {
             default: 'https://buy.stripe.com/eVq9AT81V80oeuVaqo7g408',
@@ -109,7 +107,7 @@ const tiers: PricingTier[] = [
             '11,000 Gems / month',
             '3,000 Crystals / month',
             'Best Gems per dollar',
-            'Free community generation',
+            'Unlimited Generation for certain models',
         ],
         links: {
             default: 'https://buy.stripe.com/dRm3cv3LF3K886xcyw7g40a',
