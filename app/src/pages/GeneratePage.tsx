@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, LogOut, PenLine } from 'lucide-react';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
 import { getDefaultModel, ACTIVE_IMAGE_MODELS, type Model } from '@/data/modelData';
-import { useAuth, usePromoStatus } from '@/hooks/useAuth';
+import { useAuth, usePromoStatus, getUserDisplayInfo } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 
 export interface GenerationSettings {
@@ -63,10 +63,10 @@ const FREE_ELIGIBLE_IDS = new Set([7, 9, 10, 11, 12, 13, 14]);
 
 export default function GeneratePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { currentTier } = usePromoStatus();
-  // Standard is the highest tier now; it gets free generation
   const canUseFreeCreation = currentTier === 'standard';
+  const userInfo = getUserDisplayInfo(user);
 
   // Core generation state
   const [selectedRatio, setSelectedRatio] = useState('2:3');
@@ -74,6 +74,11 @@ export default function GeneratePage() {
   const [negativePrompt, setNegativePrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [freeCreationActive, setFreeCreationActive] = useState(false);
+
+  // UI state
+  const [promptMinimized, setPromptMinimized] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Credit balance
   const [crystals, setCrystals] = useState<number>(0);
@@ -318,18 +323,29 @@ export default function GeneratePage() {
     }
   };
 
-  return (
-    <div className="h-screen bg-[#0D0F0E] flex flex-col overflow-hidden text-white">
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
-      {/* ── Top Bar ── */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0 z-10">
+  return (
+    <div className="h-dvh bg-[#0D0F0E] flex flex-col overflow-hidden text-white" style={{ height: '100dvh' }}>
+
+      {/* ── Top Bar (sticky) ── */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0 z-30 bg-[#0D0F0E]">
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <img src="/new logo.png" alt="Nyxel" className="w-7 h-7 object-contain" />
           <span className="text-sm font-bold text-white hidden sm:block">Nyxel</span>
         </Link>
 
-        {/* Credits display */}
-        <div className="flex items-center gap-3">
+        {/* Credits + Tier + Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link to="/pricing" className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-white transition-colors" title={`${crystals} Crystals`}>
             <div className="w-4 h-4 rounded-full bg-purple-400/30 flex items-center justify-center flex-shrink-0">
               <div className="w-2 h-2 rounded-full bg-purple-400" />
@@ -338,9 +354,45 @@ export default function GeneratePage() {
           </Link>
 
           {user ? (
-            <Link to="/pricing" className="text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all capitalize">
-              {currentTier ?? 'Free'}
-            </Link>
+            <>
+              <Link to="/pricing" className="text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20 transition-all capitalize">
+                {currentTier ?? 'Free'}
+              </Link>
+
+              {/* Profile Avatar */}
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="w-8 h-8 rounded-full bg-purple-500/30 border border-white/10 hover:border-white/20 flex items-center justify-center text-white text-xs font-bold transition-all overflow-hidden"
+                >
+                  {userInfo.avatarUrl ? (
+                    <img src={userInfo.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{userInfo.initial}</span>
+                  )}
+                </button>
+
+                {profileDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-[#1a1d1b] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-white/5">
+                      <p className="text-white text-sm font-medium truncate">{userInfo.displayName}</p>
+                      <p className="text-gray-500 text-xs truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        setProfileDropdownOpen(false);
+                        await signOut();
+                        navigate('/');
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <Link to="/auth" className="text-xs px-3 py-1.5 rounded-full bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition-colors flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
@@ -350,7 +402,7 @@ export default function GeneratePage() {
         </div>
       </header>
 
-      {/* ── Preview Area (fills entire remaining space, scrollable) ── */}
+      {/* ── Preview Area (fills remaining space) ── */}
       <div className="flex-1 overflow-hidden min-h-0 relative">
         <PreviewArea
           isGenerating={isGenerating}
@@ -362,30 +414,40 @@ export default function GeneratePage() {
         />
 
         {/* ── Prompt Bar (floating over preview) ── */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
-          <div className="pointer-events-auto">
-            <PromptBar
-              prompt={prompt}
-              setPrompt={setPrompt}
-              negativePrompt={negativePrompt}
-              setNegativePrompt={setNegativePrompt}
-              onGenerate={handleGenerate}
-              isGenerating={isGenerating}
-              costLabel={generationCost?.label || ''}
-              selectedRatio={selectedRatio}
-              onRatioChange={setSelectedRatio}
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-              availableModels={ACTIVE_IMAGE_MODELS}
-              canUseFreeCreation={canUseFreeCreation}
-              freeCreationActive={freeCreationActive}
-              onFreeCreationToggle={() => setFreeCreationActive(prev => !prev)}
-            />
+        {!promptMinimized ? (
+          <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
+            <div className="pointer-events-auto">
+              <PromptBar
+                prompt={prompt}
+                setPrompt={setPrompt}
+                negativePrompt={negativePrompt}
+                setNegativePrompt={setNegativePrompt}
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                costLabel={generationCost?.label || ''}
+                selectedRatio={selectedRatio}
+                onRatioChange={setSelectedRatio}
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
+                availableModels={ACTIVE_IMAGE_MODELS}
+                canUseFreeCreation={canUseFreeCreation}
+                freeCreationActive={freeCreationActive}
+                onFreeCreationToggle={() => setFreeCreationActive(prev => !prev)}
+                onMinimize={() => setPromptMinimized(true)}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ── Restore icon (bottom-left) ── */
+          <button
+            onClick={() => setPromptMinimized(false)}
+            className="absolute bottom-4 left-4 z-20 w-12 h-12 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/30 flex items-center justify-center transition-all active:scale-90"
+            title="Open prompt bar"
+          >
+            <PenLine className="w-5 h-5" />
+          </button>
+        )}
       </div>
-
-
 
       <style>{`
         .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -393,7 +455,8 @@ export default function GeneratePage() {
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #2A2E2C; border-radius: 3px; }
         .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #3A3E3C; }
         .scrollbar-thin::-webkit-scrollbar-corner { background: transparent; }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }

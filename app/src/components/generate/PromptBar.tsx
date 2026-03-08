@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, ChevronDown, Settings2, Zap } from 'lucide-react';
+import { Sparkles, ChevronDown, Settings2, Zap, Minimize2 } from 'lucide-react';
 import type { Model } from '@/data/modelData';
 
 interface PromptBarProps {
@@ -18,6 +18,7 @@ interface PromptBarProps {
   canUseFreeCreation?: boolean;
   freeCreationActive?: boolean;
   onFreeCreationToggle?: () => void;
+  onMinimize?: () => void;
 }
 
 // All SDXL aspect ratios (Illustrious models support all except 21:9)
@@ -51,6 +52,7 @@ export function PromptBar({
   canUseFreeCreation = false,
   freeCreationActive = false,
   onFreeCreationToggle,
+  onMinimize,
 }: PromptBarProps) {
   const [activeTab, setActiveTab] = useState<PromptTab>('positive');
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
@@ -127,7 +129,7 @@ export function PromptBar({
               </button>
             </div>
 
-            {/* Right: Model selector + Settings button */}
+            {/* Right: Model selector + Settings + Minimize */}
             <div className="flex items-center gap-1.5">
               {/* Model dropdown */}
               <div className="relative" ref={modelDropdownRef}>
@@ -209,6 +211,17 @@ export function PromptBar({
                   </div>
                 )}
               </div>
+
+              {/* Minimize button */}
+              {onMinimize && (
+                <button
+                  onClick={onMinimize}
+                  className="flex items-center text-xs text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all"
+                  title="Minimize prompt bar"
+                >
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
