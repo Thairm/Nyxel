@@ -154,7 +154,7 @@ export const imageModels: Model[] = [
         version: 'v1.0',
         type: 'image',
         category: 'AI Model',
-        image: '/model-wainsfwillustrious.png',
+        image: '/model-wainsfwillustrious.png?v=2',
         badge: 'Featured',
         featured: true,
         rating: 4.9,
