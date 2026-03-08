@@ -350,8 +350,8 @@ export default function GeneratePage() {
         </div>
       </header>
 
-      {/* ── Preview Area (fills remaining space, scrollable) ── */}
-      <div className="flex-1 overflow-hidden min-h-0">
+      {/* ── Preview Area (fills entire remaining space, scrollable) ── */}
+      <div className="flex-1 overflow-hidden min-h-0 relative">
         <PreviewArea
           isGenerating={isGenerating}
           generatedItems={generatedItems}
@@ -360,28 +360,32 @@ export default function GeneratePage() {
           hasMoreHistory={hasMoreHistory}
           loadingMore={loadingMore}
         />
+
+        {/* ── Prompt Bar (floating over preview) ── */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
+          <div className="pointer-events-auto">
+            <PromptBar
+              prompt={prompt}
+              setPrompt={setPrompt}
+              negativePrompt={negativePrompt}
+              setNegativePrompt={setNegativePrompt}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              costLabel={generationCost?.label || ''}
+              selectedRatio={selectedRatio}
+              onRatioChange={setSelectedRatio}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              availableModels={ACTIVE_IMAGE_MODELS}
+              canUseFreeCreation={canUseFreeCreation}
+              freeCreationActive={freeCreationActive}
+              onFreeCreationToggle={() => setFreeCreationActive(prev => !prev)}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* ── Prompt Bar (pinned to bottom) ── */}
-      <div className="flex-shrink-0 border-t border-white/5">
-        <PromptBar
-          prompt={prompt}
-          setPrompt={setPrompt}
-          negativePrompt={negativePrompt}
-          setNegativePrompt={setNegativePrompt}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          costLabel={generationCost?.label || ''}
-          selectedRatio={selectedRatio}
-          onRatioChange={setSelectedRatio}
-          selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
-          availableModels={ACTIVE_IMAGE_MODELS}
-          canUseFreeCreation={canUseFreeCreation}
-          freeCreationActive={freeCreationActive}
-          onFreeCreationToggle={() => setFreeCreationActive(prev => !prev)}
-        />
-      </div>
+
 
       <style>{`
         .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }

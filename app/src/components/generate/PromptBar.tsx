@@ -90,13 +90,13 @@ export function PromptBar({
   const hasNegativePrompt = negativePrompt.trim().length > 0;
 
   return (
-    <div className="bg-[#0D0F0E] px-3 sm:px-6 py-3">
+    <div className="px-3 sm:px-6 py-3">
       <div className="max-w-4xl mx-auto">
 
         {/* ══════════════════════════════════════════════
             PROMPT BOX (tabs are part of the box border)
             ══════════════════════════════════════════════ */}
-        <div className="relative bg-[#141816] border border-white/10 rounded-2xl overflow-visible focus-within:border-purple-500/40 transition-colors">
+        <div className="relative bg-[#141816]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-visible focus-within:border-purple-500/40 transition-colors shadow-2xl shadow-black/50">
 
           {/* ── Tab row: sits at the very top of the box ── */}
           <div className="flex items-center justify-between px-3 pt-2.5 pb-0">
@@ -282,10 +282,6 @@ export function PromptBar({
             </button>
           </div>
         </div>
-
-        <p className="text-center text-[10px] text-gray-700 mt-1.5">
-          Ctrl+Enter to generate · 10 💜 per image
-        </p>
       </div>
     </div>
   );
