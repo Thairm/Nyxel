@@ -73,6 +73,7 @@ export default function GeneratePage() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [freeCreationActive, setFreeCreationActive] = useState(false);
 
   // Credit balance
   const [crystals, setCrystals] = useState<number>(0);
@@ -86,13 +87,14 @@ export default function GeneratePage() {
 
   // Dynamic cost label
   const generationCost = useMemo(() => {
-    if (canUseFreeCreation && FREE_ELIGIBLE_IDS.has(selectedModel.id)) {
+    const isFree = canUseFreeCreation && freeCreationActive && FREE_ELIGIBLE_IDS.has(selectedModel.id);
+    if (isFree) {
       return { type: 'free' as const, cost: 0, label: 'Free ✨' };
     }
     const base = GENERATION_COSTS[selectedModel.id];
     if (!base) return null;
     return { type: base.type, cost: base.cost, label: `${base.cost} 💜` };
-  }, [selectedModel.id, canUseFreeCreation]);
+  }, [selectedModel.id, canUseFreeCreation, freeCreationActive]);
 
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
 
@@ -261,7 +263,7 @@ export default function GeneratePage() {
         prompt,
         userId: user?.id || null,
         quantity: 1,  // Always 1 — no batch
-        freeCreation: canUseFreeCreation,
+        freeCreation: canUseFreeCreation && freeCreationActive,
         params: {
           ratio: selectedRatio,
           aspect_ratio: selectedRatio,
@@ -320,7 +322,7 @@ export default function GeneratePage() {
     <div className="h-screen bg-[#0D0F0E] flex flex-col overflow-hidden text-white">
 
       {/* ── Top Bar ── */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0 z-10">
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <img src="/new logo.png" alt="Nyxel" className="w-7 h-7 object-contain" />
           <span className="text-sm font-bold text-white hidden sm:block">Nyxel</span>
@@ -348,8 +350,8 @@ export default function GeneratePage() {
         </div>
       </header>
 
-      {/* ── Preview Area (fills remaining space) ── */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      {/* ── Preview Area (fills remaining space, scrollable) ── */}
+      <div className="flex-1 overflow-hidden min-h-0">
         <PreviewArea
           isGenerating={isGenerating}
           generatedItems={generatedItems}
@@ -375,6 +377,9 @@ export default function GeneratePage() {
           selectedModel={selectedModel}
           onModelChange={setSelectedModel}
           availableModels={ACTIVE_IMAGE_MODELS}
+          canUseFreeCreation={canUseFreeCreation}
+          freeCreationActive={freeCreationActive}
+          onFreeCreationToggle={() => setFreeCreationActive(prev => !prev)}
         />
       </div>
 

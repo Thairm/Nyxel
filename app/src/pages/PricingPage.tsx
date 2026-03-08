@@ -398,7 +398,7 @@ export default function PricingPage() {
                     {isLoading ? (
                         <div className="text-center py-16 text-gray-500">Loading plans...</div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div className="flex flex-wrap gap-5 justify-center">
                             {visibleTiers.map((tier) => {
                                 const promoAvailable = isPromoAvailable(tier);
 

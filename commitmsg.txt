@@ -1,0 +1,1 @@
+UI polish: fix scroll in preview, tabs above prompt box, free-gen toggle, settings popup, docs mobile, pricing centered
