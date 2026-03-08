@@ -1,3 +1,7 @@
+# Internal tool caches — never commit
+.claude/
+commitmsg.txt
+
 # Dependencies
 node_modules/
 
