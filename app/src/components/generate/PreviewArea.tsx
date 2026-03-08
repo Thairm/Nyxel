@@ -115,7 +115,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
     };
 
     return (
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-thin p-6">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto scrollbar-thin p-4 sm:p-6">
             {/* Top Toolbar */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
