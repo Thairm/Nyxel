@@ -126,7 +126,7 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                 </div>
             )}
 
-            {/* Generated Content — flat wrapping grid, newest first */}
+            {/* Generated Content — flat wrapping grid, oldest first */}
             {hasContent && (
                 <div className="flex flex-wrap gap-3 pb-40">
 
@@ -138,21 +138,8 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                         </div>
                     )}
 
-                    {/* Loading skeleton for pending generation */}
-                    {isGenerating && Array.from({ length: pendingCount || 1 }).map((_, i) => (
-                        <div key={`skeleton-${i}`} className="w-full sm:w-[360px] shrink-0">
-                            <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 aspect-[2/3] animate-pulse">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
-                                        <span className="text-emerald-400 text-sm font-medium">Generating...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    {generatedItems.map((item) => (
+                    {/* Items: reversed so oldest at top-left, newest at bottom-right */}
+                    {[...generatedItems].reverse().map((item) => (
                         <div key={item.id} className="relative group w-full sm:w-[360px] shrink-0">
                             <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5">
                                 {item.mediaType === 'video' ? (
@@ -249,6 +236,20 @@ export function PreviewArea({ isGenerating, generatedItems = [], pendingCount = 
                                         >
                                             <Maximize2 className="w-3.5 h-3.5" />
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Loading skeleton — at the end (bottom-right) */}
+                    {isGenerating && Array.from({ length: pendingCount || 1 }).map((_, i) => (
+                        <div key={`skeleton-${i}`} className="w-full sm:w-[360px] shrink-0">
+                            <div className="relative rounded-xl overflow-hidden bg-[#1A1E1C] border border-white/5 aspect-[2/3] animate-pulse">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+                                        <span className="text-emerald-400 text-sm font-medium">Generating...</span>
                                     </div>
                                 </div>
                             </div>
