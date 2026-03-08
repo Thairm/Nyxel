@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import HomePage from './pages/HomePage';
+
 import GeneratePage from './pages/GeneratePage';
 import DocumentationPage from './pages/DocumentationPage';
 import PricingPage from './pages/PricingPage';
@@ -17,7 +17,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/home" element={<HomePage />} />
+        <Route path="/home" element={<Navigate to="/generate" replace />} />
         <Route path="/generate/:mode" element={<GeneratePage />} />
         <Route path="/generate" element={<Navigate to="/generate/image" replace />} />
         <Route path="/docs" element={<DocumentationPage />} />

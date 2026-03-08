@@ -150,18 +150,19 @@ export const imageModels: Model[] = [
     },
     {
         id: 7,
-        name: 'WAI-illustrious-SDXL',
+        name: 'Nyxel V1.0',
         version: 'v1.0',
         type: 'image',
         category: 'AI Model',
         image: '/model-wainsfwillustrious.png',
-        badge: 'Checkpoint',
-        rating: 4.8,
-        description: 'Illustrious-based SDXL model for high-quality image generation',
+        badge: 'Featured',
+        featured: true,
+        rating: 4.9,
+        description: 'Nyxel\'s flagship anime & illustration model — fast, beautiful, expressive',
         supportedParams: {
             aspectRatio: true,
             widthHeight: true,
-            quantity: { max: 4, default: 4 },
+            quantity: { max: 1, default: 1 },
             negativePrompt: true,
             seed: true,
             steps: { min: 1, max: 50, default: 30 },
@@ -620,9 +621,19 @@ export const videoModels: Model[] = [
 // Get all models
 export const allModels = [...imageModels, ...videoModels];
 
+// ============================================
+// ACTIVE MODELS — shown in frontend UI dropdown
+// Add model IDs here as new models are launched
+// ============================================
+export const ACTIVE_IMAGE_MODELS: Model[] = imageModels.filter(m => [7].includes(m.id));
+
 // Helper to get default model for a mode
 export function getDefaultModel(mode: 'image' | 'video'): Model {
-    return mode === 'video' ? videoModels[0] : imageModels[0];
+    // Default image model is Nyxel V1.0 (ID 7)
+    if (mode === 'image') {
+        return imageModels.find(m => m.id === 7) ?? imageModels[0];
+    }
+    return videoModels[0];
 }
 
 // Helper to get model by ID

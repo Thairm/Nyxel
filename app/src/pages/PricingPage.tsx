@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Sparkles, Gem, Diamond, Zap, Crown, ArrowLeft, Info, LogIn, LogOut, Tag, Gift } from 'lucide-react';
+import { Check, Sparkles, Diamond, Zap, ArrowLeft, Info, LogIn, LogOut, Tag, Gift } from 'lucide-react';
 import { useAuth, usePromoStatus } from '../hooks/useAuth';
 import { TIER_ORDER } from '../lib/supabase';
 
@@ -24,9 +24,12 @@ interface PricingTier {
     links: TierLinks;
 }
 
+// Crystal amounts per tier
+const STARTER_CRYSTALS = 5000;
+const STANDARD_CRYSTALS = 10000;
+
 // ============================================================
-// PASTE YOUR STRIPE PAYMENT LINK URLs HERE
-// Replace '#' with your actual links from Stripe Dashboard
+// STRIPE PAYMENT LINKS
 // ============================================================
 const tiers: PricingTier[] = [
     {
@@ -35,14 +38,15 @@ const tiers: PricingTier[] = [
         price: '$4.99',
         priceNum: 4.99,
         promoPrice: '$2.49',
-        gems: 1500,
-        crystals: 500,
-        icon: <Gem className="w-6 h-6" />,
+        gems: 0,  // Gems hidden — backend still tracks this
+        crystals: STARTER_CRYSTALS,
+        icon: <Diamond className="w-6 h-6" />,
         features: [
             'Everything in Free',
-            '1,500 Gems / month',
-            '500 Crystals / month',
+            `${STARTER_CRYSTALS.toLocaleString()} Crystals / month`,
+            '~500 images / month',
             'Crystal fast-pass queue',
+            'Priority support',
         ],
         links: {
             default: 'https://buy.stripe.com/9B69AT1Dx1C0gD3eGE7g404',
@@ -55,15 +59,16 @@ const tiers: PricingTier[] = [
         price: '$9.99',
         priceNum: 9.99,
         promoPrice: '$4.99',
-        gems: 3000,
-        crystals: 1000,
-        icon: <Diamond className="w-6 h-6" />,
+        gems: 0,  // Gems hidden — backend still tracks this
+        crystals: STANDARD_CRYSTALS,
+        icon: <Zap className="w-6 h-6" />,
         highlight: true,
-        badge: 'Most Popular',
+        badge: 'Best Value',
         features: [
             'Everything in Starter',
-            '3,000 Gems / month',
-            '1,000 Crystals / month',
+            `${STANDARD_CRYSTALS.toLocaleString()} Crystals / month`,
+            '~1,000 images / month',
+            'Free Generation mode ✨',
             'Crystal fast-pass queue',
         ],
         links: {
@@ -71,55 +76,10 @@ const tiers: PricingTier[] = [
             promo: 'https://buy.stripe.com/dRm6oHbe75SgaeF4207g407?prefilled_promo_code=STANDARD50caefmcprgasmcakl',
         },
     },
-    {
-        id: 'pro',
-        name: 'Pro',
-        price: '$19.99',
-        priceNum: 19.99,
-        promoPrice: '$9.99',
-        gems: 7000,
-        crystals: 2000,
-        icon: <Zap className="w-6 h-6" />,
-        badge: 'Best Value',
-        features: [
-            'Everything in Standard',
-            '7,000 Gems / month',
-            '2,000 Crystals / month',
-            'More Gems per dollar',
-            'Unlimited Generation for certain models',
-        ],
-        links: {
-            default: 'https://buy.stripe.com/eVq9AT81V80oeuVaqo7g408',
-            promo: 'https://buy.stripe.com/cNieVd3LF2G4aeF5647g409?prefilled_promo_code=PRO50mcpaefakqwerflff',
-        },
-    },
-    {
-        id: 'ultra',
-        name: 'Ultra',
-        price: '$29.99',
-        priceNum: 29.99,
-        promoPrice: '$14.99',
-        gems: 11000,
-        crystals: 3000,
-        icon: <Crown className="w-6 h-6" />,
-        features: [
-            'Everything in Pro',
-            '11,000 Gems / month',
-            '3,000 Crystals / month',
-            'Best Gems per dollar',
-            'Unlimited Generation for certain models',
-        ],
-        links: {
-            default: 'https://buy.stripe.com/dRm3cv3LF3K886xcyw7g40a',
-            promo: 'https://buy.stripe.com/00w7sL0ztcgE5Yp7ec7g40b?prefilled_promo_code=ULTRA50ratglamfesgfqwer',
-        },
-    },
 ];
 
 const modelCosts = [
-    { name: 'Nano Banana Pro', type: 'Gems', cost: 100, description: 'Premium API model' },
-    { name: 'Z Image', type: 'Crystals', cost: 20, description: 'Community model' },
-    { name: 'SDXL Models', type: 'Crystals', cost: 10, description: 'Community model' },
+    { name: 'Nyxel V1.0', type: 'Crystals', cost: 10, description: 'Anime & illustration model' },
 ];
 
 export default function PricingPage() {
@@ -315,20 +275,13 @@ export default function PricingPage() {
                         </div>
                     )}
 
-                    {/* Credit Explainer */}
+                    {/* Credit Explainer — Crystals only */}
                     <div className="flex flex-wrap justify-center gap-6 mt-6">
-                        <div className="flex items-center gap-3 bg-yellow-400/10 border border-yellow-400/20 rounded-full px-5 py-2.5">
-                            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                            <span className="text-sm">
-                                <strong className="text-yellow-400">Gems</strong>
-                                <span className="text-gray-400 ml-1">— premium API models</span>
-                            </span>
-                        </div>
                         <div className="flex items-center gap-3 bg-purple-400/10 border border-purple-400/20 rounded-full px-5 py-2.5">
                             <div className="w-3 h-3 rounded-full bg-purple-400" />
                             <span className="text-sm">
                                 <strong className="text-purple-400">Crystals</strong>
-                                <span className="text-gray-400 ml-1">— community models</span>
+                                <span className="text-gray-400 ml-1">— 10 per image generated</span>
                             </span>
                         </div>
                     </div>
@@ -429,14 +382,14 @@ export default function PricingPage() {
                                     <h3 className="text-lg font-semibold">Free Tier</h3>
                                 </div>
                                 <p className="text-sm text-gray-400">
-                                    50 Crystals per month. Create an account to start.
+                                    50 Crystals per month · ~5 images. No credit card required.
                                 </p>
                             </div>
                             <Link
-                                to={user ? '/home' : '/auth'}
+                                to={user ? '/generate' : '/auth'}
                                 className="bg-white/10 text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-white/20 border border-white/20 transition-colors"
                             >
-                                {user ? 'Go to Dashboard' : 'Create Free Account'}
+                                {user ? 'Start Creating' : 'Create Free Account'}
                             </Link>
                         </div>
                     </div>
@@ -506,14 +459,10 @@ export default function PricingPage() {
                                         )}
                                         {!promoAvailable && <div className="mb-4" />}
 
-                                        {/* Credits */}
+                                        {/* Credits — Crystals only */}
                                         <div className="flex flex-col gap-2 mb-5 pb-5 border-b border-white/10">
-                                            <div className="flex items-center justify-between bg-yellow-400/5 rounded-lg px-3 py-2">
-                                                <span className="text-xs text-gray-400">Gems</span>
-                                                <span className="text-sm font-semibold text-yellow-400">{tier.gems.toLocaleString()}</span>
-                                            </div>
                                             <div className="flex items-center justify-between bg-purple-400/5 rounded-lg px-3 py-2">
-                                                <span className="text-xs text-gray-400">Crystals</span>
+                                                <span className="text-xs text-gray-400">Crystals / month</span>
                                                 <span className="text-sm font-semibold text-purple-400">{tier.crystals.toLocaleString()}</span>
                                             </div>
                                         </div>
@@ -624,22 +573,22 @@ export default function PricingPage() {
                                 <Info className="w-5 h-5 text-purple-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">How the Queue System Works</h3>
+                                <h3 className="text-lg font-semibold mb-2">How Crystals Work</h3>
                                 <div className="space-y-3 text-sm text-gray-400">
                                     <p>
-                                        Community models (Z Image, SDXL) run on our serverless GPU infrastructure with a queue system:
+                                        Each image generation costs <strong className="text-white">10 Crystals</strong>. Crystals refresh monthly with your plan.
                                     </p>
                                     <div className="grid sm:grid-cols-2 gap-3">
                                         <div className="bg-white/5 rounded-xl p-4">
-                                            <div className="font-medium text-white mb-1">🐢 Free Queue</div>
+                                            <div className="font-medium text-white mb-1">🐢 Standard Queue</div>
                                             <p className="text-xs">
-                                                Available on Standard tier ($9.99+). Generate community models for free, but wait in the standard queue.
+                                                All Crystal generations run on our fast serverless GPU infrastructure.
                                             </p>
                                         </div>
                                         <div className="bg-purple-400/5 border border-purple-400/10 rounded-xl p-4">
-                                            <div className="font-medium text-purple-300 mb-1">⚡ Fast Pass Queue</div>
+                                            <div className="font-medium text-purple-300 mb-1">✨ Free Generation</div>
                                             <p className="text-xs">
-                                                Spend Crystals to skip ahead. Your generation gets priority processing in a separate, faster queue.
+                                                Standard plan users can generate without spending Crystals using Free Generation mode.
                                             </p>
                                         </div>
                                     </div>
@@ -661,10 +610,10 @@ export default function PricingPage() {
                     </h2>
                     <p className="text-gray-400 mb-8">Start with 50 free Crystals. No credit card required.</p>
                     <Link
-                        to={user ? '/home' : '/auth'}
+                        to={user ? '/generate' : '/auth'}
                         className="inline-block bg-yellow-400 text-black px-8 py-4 rounded-full text-base font-semibold hover:bg-yellow-300 transition-all transform hover:scale-105"
                     >
-                        {user ? 'Go to Dashboard' : 'Get Started for Free'}
+                        {user ? 'Start Creating' : 'Get Started for Free'}
                     </Link>
                 </div>
             </section>
