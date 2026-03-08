@@ -149,7 +149,7 @@ export async function onRequestPost(context: any) {
 
         // ============================================
         // Credit Check ONLY (no deduction yet — deduct after success)
-        // Free Creation bypasses crystal cost for Pro/Ultra on eligible illustrious models.
+        // Free Creation bypasses crystal cost for Standard+ on eligible illustrious models.
         // ============================================
 
         // Models eligible for Free Creation (not Atlas Cloud, not Z Image Base)
@@ -157,7 +157,7 @@ export async function onRequestPost(context: any) {
 
         let creditCost: { type: 'gems' | 'crystals'; cost: number } | null = null;
         if (env.SUPABASE_SERVICE_KEY) {
-            // Free Creation guard: Pro/Ultra only, eligible illustrious models only
+            // Free Creation guard: Standard+ only, eligible illustrious models only
             let skipCreditCheck = false;
             if (freeCreation && isCivitaiModel(modelId) && FREE_GENERATION_MODEL_IDS.has(modelId)) {
                 const supabase = getSupabaseServer(env.SUPABASE_SERVICE_KEY);
@@ -170,14 +170,14 @@ export async function onRequestPost(context: any) {
 
                 if (!canUseFreeCreation(userTier)) {
                     return new Response(JSON.stringify({
-                        error: 'Free Creation is a Pro or Ultra feature. Please upgrade your plan.',
+                        error: 'Free Creation is a Standard tier feature. Please upgrade your plan.',
                     }), {
                         status: 403,
                         headers: { 'Content-Type': 'application/json' },
                     });
                 }
                 skipCreditCheck = true;
-                console.log(`[FREE CREATION] Pro/Ultra user ${userId} — skipping crystal cost`);
+                console.log(`[FREE CREATION] Standard+ user ${userId} — skipping crystal cost`);
             }
 
             if (!skipCreditCheck) {

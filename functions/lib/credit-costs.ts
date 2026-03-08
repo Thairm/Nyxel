@@ -42,10 +42,10 @@ export const VIDEO_MODEL_COSTS_PER_SEC: Record<number, number> = {
  */
 export const TIER_CREDITS: Record<string, { gems: number; crystals: number }> = {
     free: { gems: 0, crystals: 50 },
-    starter: { gems: 1500, crystals: 500 },
-    standard: { gems: 3000, crystals: 1000 },
-    pro: { gems: 7000, crystals: 2000 },
-    ultra: { gems: 11000, crystals: 3000 },
+    starter: { gems: 1500, crystals: 5000 },
+    standard: { gems: 3000, crystals: 10000 },
+    pro: { gems: 7000, crystals: 10000 },
+    ultra: { gems: 11000, crystals: 10000 },
 };
 
 /**
@@ -76,10 +76,10 @@ export const TIER_HIERARCHY: Record<string, number> = {
 };
 
 /**
- * Returns true only for Pro or Ultra subscribers.
- * Free Creation lets Pro/Ultra users generate CivitAI images without spending Crystals.
+ * Returns true for Standard or higher subscribers.
+ * Free Creation lets Standard+ users generate CivitAI images without spending Crystals.
  */
 export function canUseFreeCreation(userTier: string | null): boolean {
     const level = TIER_HIERARCHY[userTier ?? 'free'] ?? 0;
-    return level >= TIER_HIERARCHY['pro'];
+    return level >= TIER_HIERARCHY['standard'];
 }

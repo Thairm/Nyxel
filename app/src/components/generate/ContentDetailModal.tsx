@@ -90,7 +90,7 @@ export function ContentDetailModal({ item, batchItems, onClose, onNavigate }: Co
             )}
 
             <div
-                className="relative flex w-[90vw] max-w-[1400px] h-[85vh] bg-[#141816] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+                className="relative flex flex-col sm:flex-row w-[95vw] sm:w-[90vw] max-w-[1400px] h-[90vh] sm:h-[85vh] bg-[#141816] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button */}
@@ -101,8 +101,8 @@ export function ContentDetailModal({ item, batchItems, onClose, onNavigate }: Co
                     <X className="w-5 h-5" />
                 </button>
 
-                {/* Left: Media Preview */}
-                <div className="flex-1 flex items-center justify-center bg-black/40 p-6 min-w-0">
+                {/* Left/Top: Media Preview */}
+                <div className="flex-1 flex items-center justify-center bg-black/40 p-3 sm:p-6 min-w-0 min-h-[200px] sm:min-h-0">
                     {item.mediaType === 'video' ? (
                         <div className="relative w-full h-full flex items-center justify-center">
                             <video
@@ -135,8 +135,8 @@ export function ContentDetailModal({ item, batchItems, onClose, onNavigate }: Co
                     )}
                 </div>
 
-                {/* Right: Settings Panel */}
-                <div className="w-[340px] shrink-0 border-l border-white/10 overflow-y-auto scrollbar-thin p-5 flex flex-col gap-5">
+                {/* Right/Bottom: Settings Panel */}
+                <div className="w-full sm:w-[340px] shrink-0 border-t sm:border-t-0 sm:border-l border-white/10 overflow-y-auto scrollbar-thin p-4 sm:p-5 flex flex-col gap-4 sm:gap-5 max-h-[45vh] sm:max-h-none">
                     {/* Header */}
                     <div className="flex items-center gap-2">
                         <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${item.mediaType === 'video'
