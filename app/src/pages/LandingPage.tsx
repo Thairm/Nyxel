@@ -16,7 +16,7 @@ export default function LandingPage() {
             {/* ── Background Image ── */}
             <div className="absolute inset-0">
                 <img
-                    src="/landing-bg.png"
+                    src="/landing-bg.webp"
                     alt=""
                     className="w-full h-full object-cover object-center"
                     draggable={false}

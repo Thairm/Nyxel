@@ -29,6 +29,7 @@ export async function uploadToB2(
         B2_APP_KEY: string;
         B2_BUCKET_NAME: string;
         B2_ENDPOINT: string;
+        B2_CDN_DOMAIN?: string;  // e.g. "cdn.nyxel.art" — serves images through Cloudflare CDN
     },
     fileBuffer: ArrayBuffer,
     fileName: string,
@@ -59,10 +60,12 @@ export async function uploadToB2(
 
     console.log('[B2] Upload success!');
 
-    // Public URL for B2 public buckets uses the "friendly" format:
-    // https://f{cluster}.backblazeb2.com/file/{bucket}/{key}
-    // But the S3-compatible URL also works for public buckets:
-    const publicUrl = `https://${bucketName}.${endpoint}/${fileName}`;
+    // If a CDN domain is configured (e.g. cdn.nyxel.art), return the CDN URL
+    // so images are served through Cloudflare's cache (free egress, faster delivery).
+    // Otherwise fall back to the direct B2 S3-compatible URL.
+    const publicUrl = env.B2_CDN_DOMAIN
+        ? `https://${env.B2_CDN_DOMAIN}/${fileName}`
+        : `https://${bucketName}.${endpoint}/${fileName}`;
 
     return publicUrl;
 }
@@ -77,6 +80,7 @@ export async function downloadAndUploadToB2(
         B2_APP_KEY: string;
         B2_BUCKET_NAME: string;
         B2_ENDPOINT: string;
+        B2_CDN_DOMAIN?: string;
     },
     sourceUrl: string,
     fileName: string,
