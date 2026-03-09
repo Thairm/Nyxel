@@ -1,7 +1,7 @@
 import { getCivitaiClient, getCivitaiModelUrn, isCivitaiModel, Scheduler } from '../../lib/civitai-client';
 import { downloadAndUploadToB2 } from '../../lib/b2-client';
 import { saveGeneration, getSupabaseServer } from '../../lib/supabase-server';
-import { getImageCost, canUseFreeCreation } from '../../lib/credit-costs';
+import { getImageCost, canUseFreeCreation, TIER_CREDITS } from '../../lib/credit-costs';
 
 // Helper: Map frontend aspect ratio to Wan 2.6 size format
 function ratioToWanSize(ratio: string): string {
@@ -66,6 +66,7 @@ function extractAtlasImageUrl(data: any): string | null {
 
 /**
  * Check if a user has enough credits (does NOT deduct).
+ * Auto-creates a free-tier credit row if none exists.
  */
 async function checkCredits(
     serviceKey: string,
@@ -83,7 +84,29 @@ async function checkCredits(
         .single();
 
     if (!credits) {
-        return { sufficient: false, current: 0, error: 'No credit record found. Please subscribe or wait for free credits.' };
+        // Auto-create free-tier credit row
+        const freeCredits = TIER_CREDITS.free;
+        const { data: newRow } = await supabase
+            .from('user_credits')
+            .upsert({
+                user_id: userId,
+                gems: freeCredits.gems,
+                crystals: freeCredits.crystals,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' })
+            .select('gems, crystals')
+            .single();
+
+        if (!newRow) {
+            return { sufficient: false, current: 0, error: 'Failed to initialize credits. Please try again.' };
+        }
+
+        console.log(`[CREDITS] Auto-created free tier credits for user ${userId}`);
+        const current = newRow[column];
+        if (current < amount) {
+            return { sufficient: false, current, error: `Insufficient ${creditType}. Need ${amount} but have ${current}.` };
+        }
+        return { sufficient: true, current };
     }
 
     const current = credits[column];

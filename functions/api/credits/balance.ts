@@ -3,6 +3,7 @@
 // Returns: { gems: number, crystals: number }
 
 import { getSupabaseServer } from '../../lib/supabase-server';
+import { TIER_CREDITS } from '../../lib/credit-costs';
 
 export async function onRequestGet(context: any) {
     const { request, env } = context;
@@ -34,8 +35,31 @@ export async function onRequestGet(context: any) {
             .single();
 
         if (error || !data) {
-            // No credit record yet — return free tier defaults
-            return new Response(JSON.stringify({ gems: 0, crystals: 50 }), {
+            // No credit record yet — auto-create one with free tier defaults
+            const freeCredits = TIER_CREDITS.free;
+            const { data: newRow, error: insertError } = await supabase
+                .from('user_credits')
+                .upsert({
+                    user_id: userId,
+                    gems: freeCredits.gems,
+                    crystals: freeCredits.crystals,
+                    updated_at: new Date().toISOString(),
+                }, { onConflict: 'user_id' })
+                .select('gems, crystals')
+                .single();
+
+            if (insertError || !newRow) {
+                console.error('[CREDITS] Failed to auto-create credit row:', insertError?.message);
+                return new Response(JSON.stringify({ gems: freeCredits.gems, crystals: freeCredits.crystals }), {
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+
+            console.log(`[CREDITS] Auto-created free tier credits for user ${userId}: gems=${newRow.gems}, crystals=${newRow.crystals}`);
+            return new Response(JSON.stringify({
+                gems: newRow.gems,
+                crystals: newRow.crystals,
+            }), {
                 headers: { 'Content-Type': 'application/json' },
             });
         }

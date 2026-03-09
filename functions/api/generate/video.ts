@@ -3,7 +3,7 @@
 // API params verified against official Atlas Cloud documentation
 
 import { getSupabaseServer } from '../../lib/supabase-server';
-import { getVideoCost } from '../../lib/credit-costs';
+import { getVideoCost, TIER_CREDITS } from '../../lib/credit-costs';
 
 // Helper: Map frontend aspect ratio to pixel size for Wan 2.6 T2V
 function ratioToWanVideoSize(ratio: string): string {
@@ -25,6 +25,7 @@ function ratioToSoraSize(ratio: string): string {
 
 /**
  * Check if user has enough gems (does NOT deduct).
+ * Auto-creates a free-tier credit row if none exists.
  */
 async function checkGems(
     serviceKey: string,
@@ -40,7 +41,28 @@ async function checkGems(
         .single();
 
     if (!credits) {
-        return { sufficient: false, current: 0, error: 'No credit record found. Please subscribe or wait for free credits.' };
+        // Auto-create free-tier credit row
+        const freeCredits = TIER_CREDITS.free;
+        const { data: newRow } = await supabase
+            .from('user_credits')
+            .upsert({
+                user_id: userId,
+                gems: freeCredits.gems,
+                crystals: freeCredits.crystals,
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' })
+            .select('gems')
+            .single();
+
+        if (!newRow) {
+            return { sufficient: false, current: 0, error: 'Failed to initialize credits. Please try again.' };
+        }
+
+        console.log(`[CREDITS] Auto-created free tier credits for user ${userId}`);
+        if (newRow.gems < amount) {
+            return { sufficient: false, current: newRow.gems, error: `Insufficient gems. Need ${amount} but have ${newRow.gems}.` };
+        }
+        return { sufficient: true, current: newRow.gems };
     }
 
     if (credits.gems < amount) {
