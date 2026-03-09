@@ -171,13 +171,26 @@ export default function GeneratePage() {
   const fetchCredits = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`/api/credits/balance?userId=${user.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCrystals(data.crystals ?? 0);
-      }
+      const response = await fetch(`/api/credits/balance?userId=${user.id}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      setCrystals(data.crystals ?? 0);
     } catch (err) {
       console.error('[CREDITS] Failed to fetch balance:', err);
+      // Retry once after 2 seconds on failure
+      setTimeout(async () => {
+        try {
+          const retry = await fetch(`/api/credits/balance?userId=${user.id}`, {
+            cache: 'no-store',
+          });
+          if (retry.ok) {
+            const data = await retry.json();
+            setCrystals(data.crystals ?? 0);
+          }
+        } catch {}
+      }, 2000);
     }
   }, [user?.id]);
 
@@ -282,8 +295,11 @@ export default function GeneratePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Generation failed (${response.status})`);
+      }
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to generate');
 
       const filteredSettings: GenerationSettings = { ratio: selectedRatio };
       if (negativePrompt) filteredSettings.negativePrompt = negativePrompt;

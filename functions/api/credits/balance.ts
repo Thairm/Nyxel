@@ -60,7 +60,7 @@ export async function onRequestGet(context: any) {
                 gems: newRow.gems,
                 crystals: newRow.crystals,
             }), {
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, no-cache, must-revalidate' },
             });
         }
 
@@ -68,7 +68,7 @@ export async function onRequestGet(context: any) {
             gems: data.gems,
             crystals: data.crystals,
         }), {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, no-cache, must-revalidate' },
         });
     } catch (err: any) {
         console.error('[CREDITS] Error:', err.message);
