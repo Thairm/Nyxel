@@ -628,7 +628,7 @@ export default function PricingPage() {
                     <div className="flex gap-6">
                         <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
                         <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-                        <Link to="/commerce" className="hover:text-white transition-colors">Commerce</Link>
+                        <span className="text-gray-600 cursor-default">Commerce</span>
                         <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
                     </div>
                 </div>

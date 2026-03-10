@@ -118,7 +118,7 @@ export default function LandingPage() {
             <div className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-8 py-3 flex items-center justify-center gap-4 sm:gap-6 text-xs text-gray-500">
                 <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
                 <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-                <Link to="/commerce" className="hover:text-white transition-colors">Commerce</Link>
+                <span className="text-gray-600 cursor-default">Commerce</span>
                 <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
                 <span>© 2026 Nyxel</span>
             </div>

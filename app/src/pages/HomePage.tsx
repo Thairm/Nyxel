@@ -140,7 +140,7 @@ export default function HomePage() {
                                 <div className="flex gap-6 text-gray-500 text-sm">
                                     <a href="/terms" className="hover:text-emerald-400 transition-colors">Terms</a>
                                     <a href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy</a>
-                                    <a href="/commerce" className="hover:text-emerald-400 transition-colors">Commerce Disclosure</a>
+                                    <span className="text-gray-600 cursor-default">Commerce Disclosure</span>
                                     <a href="/contact" className="hover:text-emerald-400 transition-colors">Contact</a>
                                 </div>
                             </div>
