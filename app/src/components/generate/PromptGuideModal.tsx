@@ -136,6 +136,7 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                                 <p className="text-xs font-semibold text-gray-400 mb-2">Example</p>
                                 <code className="block text-xs text-gray-300 leading-relaxed">
                                     hatsune miku, twintails, teal hair,<br />
+                                    kasane teto, red hair,<br />
                                     school uniform, smile, looking at viewer
                                 </code>
                             </div>
