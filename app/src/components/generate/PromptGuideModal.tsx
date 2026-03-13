@@ -130,7 +130,7 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                     {/* ── Characters ── */}
                     {activeTab === 'characters' && (
                         <div className="space-y-4">
-                            <p>You can generate specific anime characters by putting their name directly in your prompt. Characters that exist in danbooru datasets — like <strong className="text-white">Hatsune Miku</strong> or <strong className="text-white">Kasane Teto</strong> — can be generated just by including their name.</p>
+                            <p>You can generate specific anime characters by putting their name directly in your prompt. Characters that exist in danbooru datasets — like <strong className="text-white">Hatsune Miku</strong> or <strong className="text-white">Kasane Teto</strong> — can be generated just by including their name. You can also generate multiple specific characters together by including both of their names in the same prompt.</p>
 
                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
                                 <p className="text-xs font-semibold text-gray-400 mb-2">Example</p>
@@ -140,7 +140,7 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                                 </code>
                             </div>
 
-                            <p className="text-xs text-gray-400">The more training data a character has on danbooru, the more reliably they generate. Less popular characters may not generate correctly or at all.</p>
+                            <p className="text-xs text-gray-400">The more training data a character has on danbooru, the more reliably they generate. Less popular characters may not generate correctly or at all. Use count tags below to generate multiple characters consistently.</p>
 
                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 space-y-2">
                                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Count tags</p>
@@ -171,22 +171,7 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                         <div className="space-y-4">
                             <p>Artist name tags let you apply a specific artist's style to your generation. Adding an artist's name to your prompt will shift the image toward that artist's visual style — linework, coloring, composition and all.</p>
 
-                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-gray-400 mb-2">Example</p>
-                                <code className="block text-xs text-gray-300 leading-relaxed">
-                                    1girl, smile, art by wlop
-                                </code>
-                            </div>
-
                             <p className="text-xs text-gray-400">You can also combine multiple artist names in one prompt to blend their styles together and create a unique look.</p>
-
-                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-gray-400 mb-2">Combining artists</p>
-                                <code className="block text-xs text-gray-300 leading-relaxed">
-                                    1girl, smile, art by wlop, art by lack
-                                </code>
-                                <p className="text-xs text-gray-500 mt-2">The result blends both artists' styles. Experiment with different combinations to find something you like.</p>
-                            </div>
 
                             <div className="bg-purple-400/5 border border-purple-400/10 rounded-xl p-4">
                                 <p className="text-xs font-semibold text-purple-300 mb-1">💡 Tip</p>

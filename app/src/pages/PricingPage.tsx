@@ -111,7 +111,7 @@ const tiers: PricingTier[] = [
         gems: 0,  // Gems hidden — backend still tracks this
         crystals: PRO_CRYSTALS,
         icon: <Crown className="w-6 h-6" />,
-        badge: 'Unlimited Generation',
+        badge: 'Unlimited',
         features: [
             'Everything in Standard',
             `${PRO_CRYSTALS.toLocaleString()} Crystals / month`,
