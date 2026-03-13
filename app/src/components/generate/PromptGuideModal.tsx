@@ -72,13 +72,6 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                         <div className="space-y-4">
                             <p>Prompts use <strong className="text-white">comma-separated tags</strong>. Each tag describes one aspect of the image — the more specific, the better.</p>
 
-                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 space-y-2">
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Basic structure</p>
-                                <code className="block text-purple-300 text-xs leading-relaxed">
-                                    subject, setting, action, clothing, expression, quality tags
-                                </code>
-                            </div>
-
                             <div className="space-y-3">
                                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Danbooru-style tags</p>
                                 <p>Nyxel models are trained on danbooru-style tags. These are very precise descriptors:</p>
@@ -131,47 +124,39 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                             </div>
 
                             <p className="text-xs text-gray-500">These are already pre-filled for you in both prompt fields. You can add your own tags after them.</p>
-
-                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-gray-400 mb-2">Score tags (NoobAI / Illustrious models)</p>
-                                <p className="text-xs text-gray-400 mb-2">These models also respond well to score-based tags:</p>
-                                <code className="block text-xs text-purple-300">score_9, score_8_up, score_7_up</code>
-                                <p className="text-xs text-gray-500 mt-2">Add these at the start of your positive prompt for even better quality.</p>
-                            </div>
                         </div>
                     )}
 
-                    {/* ── Multiple Characters ── */}
+                    {/* ── Characters ── */}
                     {activeTab === 'characters' && (
                         <div className="space-y-4">
-                            <p>Generating multiple characters in one image requires specific tag combinations.</p>
+                            <p>You can generate specific anime characters by putting their name directly in your prompt. Characters that exist in danbooru datasets — like <strong className="text-white">Hatsune Miku</strong> or <strong className="text-white">Kasane Teto</strong> — can be generated just by including their name.</p>
 
-                            <div className="space-y-3">
-                                <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 space-y-2">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Count tags</p>
-                                    {[
-                                        { tag: '1girl', desc: 'Single female character' },
-                                        { tag: '2girls', desc: 'Two female characters' },
-                                        { tag: '1boy 1girl', desc: 'One male and one female' },
-                                        { tag: 'multiple girls', desc: 'Three or more females' },
-                                        { tag: 'solo', desc: 'Explicitly one character only' },
-                                        { tag: 'solo focus', desc: 'Focus on one character even if others present' },
-                                    ].map(({ tag, desc }) => (
-                                        <div key={tag} className="flex items-center justify-between">
-                                            <code className="text-xs text-purple-300">{tag}</code>
-                                            <span className="text-xs text-gray-500">{desc}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
+                                <p className="text-xs font-semibold text-gray-400 mb-2">Example</p>
+                                <code className="block text-xs text-gray-300 leading-relaxed">
+                                    hatsune miku, twintails, teal hair,<br />
+                                    school uniform, smile, looking at viewer
+                                </code>
+                            </div>
 
-                                <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                                    <p className="text-xs font-semibold text-gray-400 mb-2">Example — two characters</p>
-                                    <code className="block text-xs text-gray-300 leading-relaxed">
-                                        2girls, one with long silver hair blue dress,<br />
-                                        one with short dark hair red jacket,<br />
-                                        standing together, smile, outdoors
-                                    </code>
-                                </div>
+                            <p className="text-xs text-gray-400">The more training data a character has on danbooru, the more reliably they generate. Less popular characters may not generate correctly or at all.</p>
+
+                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 space-y-2">
+                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Count tags</p>
+                                {[
+                                    { tag: '1girl', desc: 'Single female character' },
+                                    { tag: '2girls', desc: 'Two female characters' },
+                                    { tag: '1boy 1girl', desc: 'One male and one female' },
+                                    { tag: 'multiple girls', desc: 'Three or more females' },
+                                    { tag: 'solo', desc: 'Explicitly one character only' },
+                                    { tag: 'solo focus', desc: 'Focus on one character even if others present' },
+                                ].map(({ tag, desc }) => (
+                                    <div key={tag} className="flex items-center justify-between">
+                                        <code className="text-xs text-purple-300">{tag}</code>
+                                        <span className="text-xs text-gray-500">{desc}</span>
+                                    </div>
+                                ))}
                             </div>
 
                             <div className="bg-yellow-400/5 border border-yellow-400/10 rounded-xl p-4">
@@ -184,37 +169,28 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                     {/* ── Art Style ── */}
                     {activeTab === 'style' && (
                         <div className="space-y-4">
-                            <p>Art style tags let you control the visual look and rendering style of your image.</p>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                {[
-                                    { style: 'anime style', desc: 'Classic cel-shaded anime look' },
-                                    { style: 'manga style', desc: 'Black & white manga aesthetic' },
-                                    { style: 'watercolor', desc: 'Soft watercolor painting effect' },
-                                    { style: 'oil painting', desc: 'Rich textured oil painting' },
-                                    { style: 'chibi', desc: 'Super-deformed cute style' },
-                                    { style: 'realistic', desc: 'More photo-realistic rendering' },
-                                    { style: 'fantasy art', desc: 'Epic fantasy illustration style' },
-                                    { style: 'cyberpunk', desc: 'Neon-lit futuristic aesthetic' },
-                                ].map(({ style, desc }) => (
-                                    <div key={style} className="bg-white/[0.03] border border-white/10 rounded-lg p-3">
-                                        <code className="text-xs text-purple-300 block mb-1">{style}</code>
-                                        <p className="text-xs text-gray-500">{desc}</p>
-                                    </div>
-                                ))}
-                            </div>
+                            <p>Artist name tags let you apply a specific artist's style to your generation. Adding an artist's name to your prompt will shift the image toward that artist's visual style — linework, coloring, composition and all.</p>
 
                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-gray-400 mb-2">Background & setting tags</p>
+                                <p className="text-xs font-semibold text-gray-400 mb-2">Example</p>
                                 <code className="block text-xs text-gray-300 leading-relaxed">
-                                    detailed background, forest background, cityscape,<br />
-                                    night sky, indoors, library, beach, castle
+                                    1girl, smile, art by wlop
                                 </code>
+                            </div>
+
+                            <p className="text-xs text-gray-400">You can also combine multiple artist names in one prompt to blend their styles together and create a unique look.</p>
+
+                            <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
+                                <p className="text-xs font-semibold text-gray-400 mb-2">Combining artists</p>
+                                <code className="block text-xs text-gray-300 leading-relaxed">
+                                    1girl, smile, art by wlop, art by lack
+                                </code>
+                                <p className="text-xs text-gray-500 mt-2">The result blends both artists' styles. Experiment with different combinations to find something you like.</p>
                             </div>
 
                             <div className="bg-purple-400/5 border border-purple-400/10 rounded-xl p-4">
                                 <p className="text-xs font-semibold text-purple-300 mb-1">💡 Tip</p>
-                                <p className="text-xs text-gray-400">Each model has its own style bias. Try the same prompt on different models to see how the style changes.</p>
+                                <p className="text-xs text-gray-400">Try generating multiple images using the same art style prompt and compare it to one without it.</p>
                             </div>
                         </div>
                     )}
@@ -222,57 +198,34 @@ export default function PromptGuideModal({ open, onClose }: PromptGuideModalProp
                     {/* ── Priority Queue ── */}
                     {activeTab === 'priority' && (
                         <div className="space-y-4">
-                            <p>Nyxel uses a <strong className="text-white">priority queue system</strong> so paid subscribers get faster generation times.</p>
+                            <p>Generation speed depends on <strong className="text-white">how busy the server is</strong>. The more users generating at the same time, the longer each request takes to process.</p>
 
                             <div className="space-y-3">
-                                {[
-                                    {
-                                        tier: 'Free',
-                                        icon: '🐢',
-                                        color: 'border-white/10 bg-white/[0.02]',
-                                        label: 'text-gray-400',
-                                        desc: 'Shared standard queue. Slower during peak hours.',
-                                        detail: null,
-                                    },
-                                    {
-                                        tier: 'Starter',
-                                        icon: '⚡',
-                                        color: 'border-blue-400/20 bg-blue-400/5',
-                                        label: 'text-blue-300',
-                                        desc: 'Crystal fast-pass queue. Consistently faster than free tier.',
-                                        detail: null,
-                                    },
-                                    {
-                                        tier: 'Standard',
-                                        icon: '🚀',
-                                        color: 'border-yellow-400/20 bg-yellow-400/5',
-                                        label: 'text-yellow-300',
-                                        desc: 'Higher priority than Starter. Fast, reliable generation speeds.',
-                                        detail: null,
-                                    },
-                                    {
-                                        tier: 'Pro',
-                                        icon: '🌟',
-                                        color: 'border-purple-400/30 bg-purple-400/5',
-                                        label: 'text-purple-300',
-                                        desc: 'Highest priority queue — fastest possible generation times.',
-                                        detail: 'Pro also unlocks Free Generation mode, letting you generate select models without spending Crystals.',
-                                    },
-                                ].map(({ tier, icon, color, label, desc, detail }) => (
-                                    <div key={tier} className={`border rounded-xl p-4 ${color}`}>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span>{icon}</span>
-                                            <span className={`text-sm font-semibold ${label}`}>{tier}</span>
-                                        </div>
-                                        <p className="text-xs text-gray-400">{desc}</p>
-                                        {detail && <p className="text-xs text-purple-300 mt-2">{detail}</p>}
+                                <div className="border border-emerald-400/20 bg-emerald-400/5 rounded-xl p-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span>⚡</span>
+                                        <span className="text-sm font-semibold text-emerald-300">Crystal fast-pass queue</span>
                                     </div>
-                                ))}
+                                    <p className="text-xs text-gray-400">When you spend Crystals to generate, your request is placed in the fast-pass queue and processed with higher priority. Paid subscribers have more Crystals and higher priority than free tier users.</p>
+                                </div>
+
+                                <div className="border border-white/10 bg-white/[0.02] rounded-xl p-4">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span>🐢</span>
+                                        <span className="text-sm font-semibold text-gray-400">Free Generation mode (Pro only)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400">Free Generation mode lets Pro subscribers generate without spending Crystals, but these requests use the slower shared queue — not the fast-pass queue.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-purple-400/5 border border-purple-400/10 rounded-xl p-4">
+                                <p className="text-xs font-semibold text-purple-300 mb-1">💡 Tip</p>
+                                <p className="text-xs text-gray-400">If you want the fastest generation, use Crystals instead of Free Generation mode. Save Free Generation for when speed is not a priority.</p>
                             </div>
 
                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
                                 <p className="text-xs text-gray-400">
-                                    Visit the <a href="/pricing" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">Pricing page</a> to upgrade your plan and unlock faster generation.
+                                    Visit the <a href="/pricing" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">Pricing page</a> to upgrade your plan and get more Crystals.
                                 </p>
                             </div>
                         </div>

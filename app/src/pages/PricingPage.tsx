@@ -74,7 +74,6 @@ const tiers: PricingTier[] = [
             `${STARTER_CRYSTALS.toLocaleString()} Crystals / month`,
             '~500 images / month',
             'Crystal fast-pass queue',
-            'Priority support',
         ],
         links: {
             default: 'https://buy.stripe.com/9B69AT1Dx1C0gD3eGE7g404',
@@ -112,7 +111,7 @@ const tiers: PricingTier[] = [
         gems: 0,  // Gems hidden — backend still tracks this
         crystals: PRO_CRYSTALS,
         icon: <Crown className="w-6 h-6" />,
-        badge: 'Best Power',
+        badge: 'Unlimited Generation',
         features: [
             'Everything in Standard',
             `${PRO_CRYSTALS.toLocaleString()} Crystals / month`,
