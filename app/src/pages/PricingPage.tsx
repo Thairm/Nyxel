@@ -48,7 +48,7 @@ const SOCIAL_PROMO_CODES = new Set([
 // code after creating a 33% first-month coupon in the Stripe
 // Dashboard → Coupons.
 // ============================================================
-const STRIPE_33_COUPON = 'PLACEHOLDER_33_COUPON';
+const STRIPE_33_COUPON = 'Nyxel33OFFF1STMTWARLA';
 
 // ============================================================
 // STRIPE PAYMENT LINKS
@@ -122,9 +122,8 @@ const tiers: PricingTier[] = [
             'Crystal fast-pass queue',
         ],
         links: {
-            // Replace these placeholders after creating the Pro product in Stripe
-            default: 'PLACEHOLDER_PRO_DEFAULT_LINK',
-            promo: `PLACEHOLDER_PRO_PROMO_LINK?prefilled_promo_code=${STRIPE_33_COUPON}`,
+            default: 'https://buy.stripe.com/00weVdfuna8waeF7ec7g40d',
+            promo: `https://buy.stripe.com/00weVdfuna8waeF7ec7g40d?prefilled_promo_code=${STRIPE_33_COUPON}`,
         },
     },
 ];
