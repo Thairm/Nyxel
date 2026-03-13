@@ -73,7 +73,7 @@ async function stripeGet(path: string, secretKey: string): Promise<any> {
 const PRICE_TO_TIER: Record<number, string> = {
     499: 'starter',    // $4.99/mo
     999: 'standard',   // $9.99/mo
-    1999: 'pro',       // $19.99/mo
+    1499: 'pro',       // $14.99/mo
     2999: 'ultra',     // $29.99/mo
 };
 
@@ -131,7 +131,12 @@ async function handleCheckoutCompleted(session: any, env: any) {
     if (!serviceKey) throw new Error('Missing SUPABASE_SERVICE_KEY');
 
     const supabase = getSupabaseServer(serviceKey);
-    const userId = session.client_reference_id;
+
+    // Parse client_reference_id — may have _SOCIAL suffix for social media promo bonus
+    const rawRef = session.client_reference_id || '';
+    const isSocialPromo = rawRef.endsWith('_SOCIAL');
+    const userId = isSocialPromo ? rawRef.slice(0, -7) : rawRef;
+
     const stripeCustomerId = session.customer;
     const stripeSubscriptionId = session.subscription;
 
@@ -185,6 +190,22 @@ async function handleCheckoutCompleted(session: any, env: any) {
         }, { onConflict: 'user_id' });
 
     console.log(`[WEBHOOK] Credits allocated: user=${userId}, gems=${credits.gems}, crystals=${credits.crystals}`);
+
+    // 4. Social media promo bonus: +1,000 crystals on top of initial allocation
+    if (isSocialPromo) {
+        await supabase
+            .from('user_credits')
+            .update({
+                crystals: credits.crystals + 1000,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId);
+        // Record social promo usage so user cannot redeem it again
+        await supabase
+            .from('promo_usage')
+            .insert({ user_id: userId, tier, source: 'social_media' });
+        console.log(`[WEBHOOK] Social promo +1000 crystals applied: user=${userId}, total_crystals=${credits.crystals + 1000}`);
+    }
 }
 
 async function handleInvoicePaid(invoice: any, env: any) {

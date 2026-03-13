@@ -76,10 +76,10 @@ export const TIER_HIERARCHY: Record<string, number> = {
 };
 
 /**
- * Returns true for Standard or higher subscribers.
- * Free Creation lets Standard+ users generate CivitAI images without spending Crystals.
+ * Returns true for Pro or higher subscribers.
+ * Free Creation lets Pro+ users generate CivitAI images without spending Crystals.
  */
 export function canUseFreeCreation(userTier: string | null): boolean {
     const level = TIER_HIERARCHY[userTier ?? 'free'] ?? 0;
-    return level >= TIER_HIERARCHY['standard'];
+    return level >= TIER_HIERARCHY['pro'];
 }

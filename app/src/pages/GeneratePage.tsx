@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, LogOut, PenLine } from 'lucide-react';
+import { Sparkles, LogOut, PenLine, HelpCircle } from 'lucide-react';
 import { PreviewArea } from '@/components/generate/PreviewArea';
 import { PromptBar } from '@/components/generate/PromptBar';
+import PromptGuideModal from '@/components/generate/PromptGuideModal';
 import { getDefaultModel, ACTIVE_IMAGE_MODELS, type Model } from '@/data/modelData';
 import { useAuth, usePromoStatus, getUserDisplayInfo } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -65,13 +66,13 @@ export default function GeneratePage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { currentTier } = usePromoStatus();
-  const canUseFreeCreation = currentTier === 'standard';
+  const canUseFreeCreation = currentTier === 'pro' || currentTier === 'ultra';
   const userInfo = getUserDisplayInfo(user);
 
   // Core generation state
   const [selectedRatio, setSelectedRatio] = useState('2:3');
-  const [prompt, setPrompt] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState('');
+  const [prompt, setPrompt] = useState('masterpiece, best quality, high quality, detailed, good anatomy, good quality');
+  const [negativePrompt, setNegativePrompt] = useState('worst quality, low quality, bad quality, bad anatomy, bad hands, text, watermark, blurry, artist name, words');
   const [isGenerating, setIsGenerating] = useState(false);
   const [freeCreationActive, setFreeCreationActive] = useState(false);
 
@@ -79,6 +80,7 @@ export default function GeneratePage() {
   const [promptMinimized, setPromptMinimized] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [guideOpen, setGuideOpen] = useState(() => !localStorage.getItem('nyxel_guide_seen'));
 
   // Credit balance
   const [crystals, setCrystals] = useState<number>(0);
@@ -353,6 +355,15 @@ export default function GeneratePage() {
   return (
     <div className="h-dvh bg-[#0D0F0E] flex flex-col overflow-hidden text-white" style={{ height: '100dvh' }}>
 
+      {/* Prompt Guide Modal */}
+      <PromptGuideModal
+        open={guideOpen}
+        onClose={() => {
+          localStorage.setItem('nyxel_guide_seen', '1');
+          setGuideOpen(false);
+        }}
+      />
+
       {/* ── Top Bar (sticky) ── */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0 z-30 bg-[#0D0F0E]">
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
@@ -362,6 +373,14 @@ export default function GeneratePage() {
 
         {/* Credits + Tier + Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Guide help button */}
+          <button
+            onClick={() => setGuideOpen(true)}
+            title="Prompting Guide"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
           <Link to="/pricing" className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-white transition-colors" title={`${crystals} Crystals`}>
             <div className="w-4 h-4 rounded-full bg-purple-400/30 flex items-center justify-center flex-shrink-0">
               <div className="w-2 h-2 rounded-full bg-purple-400" />
