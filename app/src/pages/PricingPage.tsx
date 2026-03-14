@@ -39,6 +39,7 @@ const SOCIAL_PROMO_CODES = new Set([
     'NYXELTIKTOK',
     'NYXELINSTA',
     'NYXELYT',
+    'GRGRE269089',
     // Add more per platform as needed
 ]);
 
@@ -133,7 +134,7 @@ const modelCosts = [
 
 export default function PricingPage() {
     const { user, loading: authLoading, signOut } = useAuth();
-    const { promoUsed, currentTier, loading: promoLoading } = usePromoStatus();
+    const { promoUsed, currentTier, socialPromoUsed, loading: promoLoading } = usePromoStatus();
     const [promoCode, setPromoCode] = useState('');
     const [promoError, setPromoError] = useState('');
     // Combined tier+discount selection: e.g. 'standard' = full price, 'standard_promo' = 33% off
@@ -167,6 +168,12 @@ export default function PricingPage() {
                 setPromoError('Invalid promo code.');
                 return;
             }
+            // Block users who have already used any social promo code (even after cancelling)
+            if (socialPromoUsed) {
+                setPromoError('You have already used a social media promo code.');
+                return;
+            }
+            // Block currently subscribed users
             if (currentTier && (TIER_ORDER[currentTier] || 0) > 0) {
                 setPromoError('This code is for new subscribers only.');
                 return;
@@ -183,8 +190,8 @@ export default function PricingPage() {
         const base = selectedTier.links.default;
         const params: string[] = [];
         if (useDiscount) params.push(`prefilled_promo_code=${STRIPE_33_COUPON}`);
-        // Append _SOCIAL to client_reference_id so webhook awards +1,000 crystal bonus
-        const ref = isSocial ? `${user.id}_SOCIAL` : user.id;
+        // Append _SOCIAL_CODENAME so webhook can track which account drove the signup
+        const ref = isSocial ? `${user.id}_SOCIAL_${code}` : user.id;
         params.push(`client_reference_id=${ref}`);
         window.location.href = `${base}?${params.join('&')}`;
     };

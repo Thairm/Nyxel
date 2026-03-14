@@ -142,12 +142,14 @@ export function usePromoStatus() {
     const { user } = useAuth();
     const [promoUsed, setPromoUsed] = useState<Record<string, boolean>>({});
     const [currentTier, setCurrentTier] = useState<string | null>(null);
+    const [socialPromoUsed, setSocialPromoUsed] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!user) {
             setPromoUsed({});
             setCurrentTier(null);
+            setSocialPromoUsed(false);
             setLoading(false);
             return;
         }
@@ -158,7 +160,7 @@ export function usePromoStatus() {
             // Check promo usage
             const { data: promos } = await supabase
                 .from('promo_usage')
-                .select('tier')
+                .select('tier, source')
                 .eq('user_id', user.id);
 
             const used: Record<string, boolean> = {};
@@ -166,6 +168,12 @@ export function usePromoStatus() {
                 used[p.tier] = true;
             });
             setPromoUsed(used);
+
+            // Check if user has already used any social media promo code
+            const socialUsed = promos?.some(p =>
+                typeof p.source === 'string' && p.source.startsWith('social_')
+            ) ?? false;
+            setSocialPromoUsed(socialUsed);
 
             // Check current subscription
             const { data: sub } = await supabase
@@ -199,5 +207,5 @@ export function usePromoStatus() {
         [user]
     );
 
-    return { promoUsed, currentTier, loading, recordPromoUse };
+    return { promoUsed, currentTier, socialPromoUsed, loading, recordPromoUse };
 }

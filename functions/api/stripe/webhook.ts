@@ -132,10 +132,13 @@ async function handleCheckoutCompleted(session: any, env: any) {
 
     const supabase = getSupabaseServer(serviceKey);
 
-    // Parse client_reference_id — may have _SOCIAL suffix for social media promo bonus
+    // Parse client_reference_id — may have _SOCIAL_CODENAME suffix for social media promo bonus
+    // Format: "user-uuid_SOCIAL_NYXELTIKTOK" or "user-uuid" (no social promo)
     const rawRef = session.client_reference_id || '';
-    const isSocialPromo = rawRef.endsWith('_SOCIAL');
-    const userId = isSocialPromo ? rawRef.slice(0, -7) : rawRef;
+    const socialIdx = rawRef.indexOf('_SOCIAL_');
+    const isSocialPromo = socialIdx !== -1;
+    const userId = isSocialPromo ? rawRef.slice(0, socialIdx) : rawRef;
+    const socialCode = isSocialPromo ? rawRef.slice(socialIdx + 8) : null; // 8 = '_SOCIAL_'.length
 
     const stripeCustomerId = session.customer;
     const stripeSubscriptionId = session.subscription;
@@ -200,11 +203,12 @@ async function handleCheckoutCompleted(session: any, env: any) {
                 updated_at: new Date().toISOString(),
             })
             .eq('user_id', userId);
-        // Record social promo usage so user cannot redeem it again
+        // Record social promo usage with specific code name for per-account analytics
+        // source format: 'social_NYXELTIKTOK', 'social_GRGRE269089', etc.
         await supabase
             .from('promo_usage')
-            .insert({ user_id: userId, tier, source: 'social_media' });
-        console.log(`[WEBHOOK] Social promo +1000 crystals applied: user=${userId}, total_crystals=${credits.crystals + 1000}`);
+            .insert({ user_id: userId, tier, source: socialCode ? `social_${socialCode}` : 'social_media' });
+        console.log(`[WEBHOOK] Social promo +1000 crystals applied: user=${userId}, code=${socialCode}, total_crystals=${credits.crystals + 1000}`);
     }
 }
 
